@@ -1,0 +1,65 @@
+:root {
+  --header-height: 60px;
+  --bg-color: #ffffff;
+  --text-color: #333333;
+  --primary-color: #3498db;
+  --accent-color: #e74c3c;
+  --border-color: #eaeaea;
+  --hover-bg: #f5f7fa;
+  --header-bg: rgba(255, 255, 255, 0.95);
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.dark-mode {
+  --bg-color: #1a1a1a;
+  --text-color: #e0e0e0;
+  --border-color: #333333;
+  --hover-bg: #2d2d2d;
+  --header-bg: rgba(26, 26, 26, 0.95);
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* 第二组卡片颜色配置 */
+:root {
+  --card-bg: #f8f7f7; /* 卡片背景色 */
+  --card-border: #eaeaea; /* 卡片边框色 */
+  --card-text: #333333; /* 卡片文本色 */
+  --card-hover-bg: #f5f7fa; /* 卡片悬停背景色 */
+  --tag-bg: #3498db; /* 标签背景色 */
+
+  --card-bg-1: #f8f9fa; /* 第二组卡片背景色 */
+  --card-border-1: #dde2e7; /* 第二组卡片边框色 */
+  --card-text-1: #2c3e50; /* 第二组卡片文本色 */
+  --card-hover-bg-1: #e9ecef; /* 第二组卡片悬停背景色 */
+  --tag-bg-1: #5dade2; /* 第二组标签背景色 */
+}
+
+.dark-mode {
+  --card-bg: #2a2a2a; /* 深色模式下卡片背景色 */
+  --card-border: #3a3a3a; /* 深色模式下卡片边框色 */
+  --card-text: #e0e0e0; /* 深色模式下卡片文本色 */
+  --card-hover-bg: #333333; /* 深色模式下卡片悬停背景色 */
+  --tag-bg: #4a9ae8; /* 深色模式下标签背景色 */
+
+  --card-bg-1: #2c2c2c; /* 深色模式下第二组卡片背景色 */
+  --card-border-1: #444444; /* 深色模式下第二组卡片边框色 */
+  --card-text-1: #e0e0e0; /* 深色模式下第二组卡片文本色 */
+  --card-hover-bg-1: #3a3a3a; /* 深色模式下第二组卡片悬停背景色 */
+  --tag-bg-1: #5d8fb8; /* 深色模式下第二组标签背景色 */
+}
+
+/* 为所有元素添加过渡效果 */
+* {
+  transition:
+    background-color var(--transition-time) ease,
+    color var(--transition-time) ease;
+}
+
+[role='region'],
+[role='main'] {
+  transition:
+    background-color var(--transition-time) ease,
+    color var(--transition-time) ease,
+    box-shadow var(--transition-time) ease,
+    border-color var(--transition-time) ease;
+}
