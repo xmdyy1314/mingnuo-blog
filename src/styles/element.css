@@ -1,0 +1,12 @@
+/* element-plus样式重写 */
+.el-popover.el-popper {
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--card-border) !important;
+  color: var(--card-text) !important;
+}
+
+.el-popper.is-light,
+.el-popper.is-light > .el-popper__arrow:before {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--card-border) !important;
+}

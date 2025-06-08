@@ -9,10 +9,12 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     Article: typeof import('./src/components/article.vue')['default']
+    ArticleCard: typeof import('./src/components/article/articleCard.vue')['default']
     ArticleView: typeof import('./src/components/article/articleView.vue')['default']
     CommentComponent: typeof import('./src/components/commponent/commentComponent.vue')['default']
     CommentItem: typeof import('./src/components/commponent/commentItem.vue')['default']
     CommentsView: typeof import('./src/components/article/commentsView.vue')['default']
+    DetailArticleView: typeof import('./src/components/article/detailArticleView.vue')['default']
     ElAutocomplete: typeof import('element-plus/es')['ElAutocomplete']
     ElAvatar: typeof import('element-plus/es')['ElAvatar']
     ElBadge: typeof import('element-plus/es')['ElBadge']
@@ -55,7 +57,7 @@ declare module 'vue' {
     ElUpload: typeof import('element-plus/es')['ElUpload']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
-    TinymceEditor: typeof import('./src/components/editArticle/tinymceEditor.vue')['default']
+    WangEditor: typeof import('./src/components/editArticle/wangEditor.vue')['default']
   }
   export interface GlobalDirectives {
     vLoading: typeof import('element-plus/es')['ElLoadingDirective']

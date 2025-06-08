@@ -15,7 +15,17 @@ export const publishBlogServer = (
 
 //根据博客的id来获取博客的详细信息
 export const getBlogDetailByIdServer = (id: number) => {
-  return request.get(`blogs/${id}`)
+  return request.get(`blogs/detail/${id}`)
+}
+
+//根据页码与类型获取文章
+export const getBlogByTypeServer = (page: number, type: string) => {
+  return request.get('blogs/by-type', {
+    params: {
+      page: page,
+      type: type,
+    },
+  })
 }
 
 //获取评论列表

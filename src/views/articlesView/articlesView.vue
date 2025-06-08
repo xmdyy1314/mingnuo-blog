@@ -1,3 +1,89 @@
+<script setup lang="ts">
+import type { articleType } from '@/types/article'
+import { getBlogByTypeServer } from '@/api/blog'
+
+// 这里可以添加 TypeScript 逻辑
+import { ref, onMounted, reactive, watch } from 'vue'
+
+//文章列表信息
+const articleList = reactive<articleType[]>([])
+
+//页码的信息
+const pageInfo = ref({
+  current_page: 1, //当前页码
+  total_page: 0, //总的页码
+  total: 10, //el下的总数
+})
+
+//导航栏选取的类型
+//选择的标签的排序
+const category = ref<string>('all')
+const categorieList = reactive([
+  {
+    label: '全部',
+    value: 'all',
+  },
+  {
+    label: '技术',
+    value: 'tech',
+  },
+  {
+    label: '设计',
+    value: 'design',
+  },
+  {
+    label: '生活',
+    value: 'life',
+  },
+  {
+    label: '旅行',
+    value: 'travel',
+  },
+  {
+    label: '科技',
+    value: 'technology',
+  },
+  {
+    label: '编程',
+    value: 'programming',
+  },
+  {
+    label: '摄影',
+    value: 'photography',
+  },
+])
+
+//点击分类函数的时候进行的函数操作
+const handleChangeType = (index: number) => {
+  //这里是类型值发送了改变
+  pageInfo.value.current_page = 1
+  category.value = categorieList[index].value
+  getArticleList()
+}
+
+//根据页码与类型获取文章的摘要部分的内容
+const getArticleList = async () => {
+  try {
+    const res = (await getBlogByTypeServer(pageInfo.value.current_page, category.value)).data
+    //先清空文章列表中的数据
+    articleList.splice(0, articleList.length)
+    //然后向里面插入数据
+    res.data.forEach((item: articleType) => {
+      articleList.push(item)
+    })
+    //更新页码信息
+    pageInfo.value.total_page = res.page_info.total_pages
+    pageInfo.value.total = pageInfo.value.total_page * 10
+  } catch (error: any) {
+    ElMessage.error('获取文章列表失败！')
+  }
+}
+
+onMounted(async () => {
+  await getArticleList()
+})
+</script>
+
 <template>
   <!-- 页面头部 -->
   <header class="page-header">
@@ -6,29 +92,15 @@
       <p class="page-subtitle">发现来自社区的最新文章、技术见解和创意故事</p>
 
       <div class="categories">
-        <div class="category" :class="{ active: category_index === 0 }" @click="category_index = 0">
-          全部
-        </div>
-        <div class="category" :class="{ active: category_index === 1 }" @click="category_index = 1">
-          技术
-        </div>
-        <div class="category" :class="{ active: category_index === 2 }" @click="category_index = 2">
-          设计
-        </div>
-        <div class="category" :class="{ active: category_index === 3 }" @click="category_index = 3">
-          生活
-        </div>
-        <div class="category" :class="{ active: category_index === 4 }" @click="category_index = 4">
-          旅行
-        </div>
-        <div class="category" :class="{ active: category_index === 5 }" @click="category_index = 5">
-          科技
-        </div>
-        <div class="category" :class="{ active: category_index === 6 }" @click="category_index = 6">
-          编程
-        </div>
-        <div class="category" :class="{ active: category_index === 7 }" @click="category_index = 7">
-          摄影
+        <!-- 分类 -->
+        <div
+          class="category"
+          v-for="(item, index) in categorieList"
+          :class="{ active: category === item.value }"
+          @click="handleChangeType(index)"
+          :key="index"
+        >
+          {{ item.label }}
         </div>
       </div>
     </div>
@@ -38,223 +110,20 @@
   <div class="container content-container">
     <main class="main-content">
       <div class="articles-grid">
-        <!-- 文章卡片 1 -->
-        <div class="article-card">
-          <div class="card-header">
-            <img
-              src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80"
-              alt="文章封面"
-              class="card-image"
-            />
-            <div class="card-tag">编程</div>
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">深入理解Vue3响应式原理</h3>
-            <p class="card-excerpt">
-              本文将深入探讨Vue3的响应式系统，通过Proxy实现的响应式机制与Vue2的差异，以及Composition
-              API如何改变我们的开发方式...
-            </p>
-            <div class="card-meta">
-              <img
-                src="https://randomuser.me/api/portraits/men/32.jpg"
-                alt="作者头像"
-                class="author-avatar"
-              />
-              <div class="author-info">
-                <div class="author-name">张明</div>
-                <div class="publish-date">2023年6月15日</div>
-              </div>
-              <div class="stats">
-                <div class="stat">
-                  <el-icon><View /></el-icon> 2.5K
-                </div>
-                <div class="stat"><i class="far fa-heart"></i> 128</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 文章卡片 2 -->
-        <div class="article-card">
-          <div class="card-header">
-            <img
-              src="https://images.unsplash.com/photo-1547658719-da2b51169166?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80"
-              alt="文章封面"
-              class="card-image"
-            />
-            <div class="card-tag">设计</div>
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">2023年UI设计趋势分析</h3>
-            <p class="card-excerpt">
-              探索2023年最具影响力的UI设计趋势，从暗黑模式到微交互，从玻璃拟态到3D元素，了解如何将这些趋势应用到你的设计项目中...
-            </p>
-            <div class="card-meta">
-              <img
-                src="https://randomuser.me/api/portraits/women/44.jpg"
-                alt="作者头像"
-                class="author-avatar"
-              />
-              <div class="author-info">
-                <div class="author-name">李设计</div>
-                <div class="publish-date">2023年6月12日</div>
-              </div>
-              <div class="stats">
-                <div class="stat">
-                  <el-icon><View /></el-icon> 3.1K
-                </div>
-                <div class="stat"><i class="far fa-heart"></i> 214</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 文章卡片 3 -->
-        <div class="article-card">
-          <div class="card-header">
-            <img
-              src="https://images.unsplash.com/photo-1496171367470-9ed9a91ea931?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80"
-              alt="文章封面"
-              class="card-image"
-            />
-            <div class="card-tag">摄影</div>
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">城市夜景摄影完全指南</h3>
-            <p class="card-excerpt">
-              掌握城市夜景摄影的技巧与窍门，从设备选择到构图技巧，从长曝光到光轨拍摄，让你的城市夜景照片脱颖而出...
-            </p>
-            <div class="card-meta">
-              <img
-                src="https://randomuser.me/api/portraits/men/22.jpg"
-                alt="作者头像"
-                class="author-avatar"
-              />
-              <div class="author-info">
-                <div class="author-name">王摄影师</div>
-                <div class="publish-date">2023年6月8日</div>
-              </div>
-              <div class="stats">
-                <div class="stat">
-                  <el-icon><View /></el-icon> 1.8K
-                </div>
-                <div class="stat"><i class="far fa-heart"></i> 97</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 文章卡片 4 -->
-        <div class="article-card">
-          <div class="card-header">
-            <img
-              src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80"
-              alt="文章封面"
-              class="card-image"
-            />
-            <div class="card-tag">数据分析</div>
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">Python数据可视化实战</h3>
-            <p class="card-excerpt">
-              使用Python的Matplotlib和Seaborn库创建专业级的数据可视化图表，掌握从基础图表到高级可视化的技巧...
-            </p>
-            <div class="card-meta">
-              <img
-                src="https://randomuser.me/api/portraits/women/32.jpg"
-                alt="作者头像"
-                class="author-avatar"
-              />
-              <div class="author-info">
-                <div class="author-name">赵数据</div>
-                <div class="publish-date">2023年6月5日</div>
-              </div>
-              <div class="stats">
-                <div class="stat">
-                  <el-icon><View /></el-icon> 2.2K
-                </div>
-                <div class="stat"><i class="far fa-heart"></i> 156</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 文章卡片 5 -->
-        <div class="article-card">
-          <div class="card-header">
-            <img
-              src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80"
-              alt="文章封面"
-              class="card-image"
-            />
-            <div class="card-tag">人工智能</div>
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">GPT-4应用开发入门</h3>
-            <p class="card-excerpt">
-              探索如何使用GPT-4
-              API构建智能应用，从聊天机器人到内容生成，从代码助手到数据分析，开启AI应用开发之旅...
-            </p>
-            <div class="card-meta">
-              <img
-                src="https://randomuser.me/api/portraits/men/41.jpg"
-                alt="作者头像"
-                class="author-avatar"
-              />
-              <div class="author-info">
-                <div class="author-name">钱AI</div>
-                <div class="publish-date">2023年5月28日</div>
-              </div>
-              <div class="stats">
-                <div class="stat">
-                  <el-icon><View /></el-icon> 4.3K
-                </div>
-                <div class="stat"><i class="far fa-heart"></i> 342</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 文章卡片 6 -->
-        <div class="article-card">
-          <div class="card-header">
-            <img
-              src="https://images.unsplash.com/photo-1542831371-29b0f74f9713?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80"
-              alt="文章封面"
-              class="card-image"
-            />
-            <div class="card-tag">前端开发</div>
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">React 18新特性解析</h3>
-            <p class="card-excerpt">
-              全面了解React
-              18的新特性，包括并发渲染、自动批处理、Suspense组件等，提升你的React应用性能与用户体验...
-            </p>
-            <div class="card-meta">
-              <img
-                src="https://randomuser.me/api/portraits/men/19.jpg"
-                alt="作者头像"
-                class="author-avatar"
-              />
-              <div class="author-info">
-                <div class="author-name">孙前端</div>
-                <div class="publish-date">2023年5月22日</div>
-              </div>
-              <div class="stats">
-                <div class="stat">
-                  <el-icon><View /></el-icon> 3.7K
-                </div>
-                <div class="stat"><i class="far fa-heart"></i> 287</div>
-              </div>
-            </div>
-          </div>
+        <div v-for="item in articleList">
+          <article-card :articleInfo="item" :key="item.id"></article-card>
         </div>
       </div>
 
       <!-- 分页控件 -->
-      <div class="pagination">
-        <el-pagination background layout="prev, pager, next" :total="1000" />
+      <div v-if="pageInfo.total > 10" class="pagination">
+        <el-pagination
+          v-model:current-page="pageInfo.current_page"
+          background
+          @current-change="getArticleList"
+          layout="prev, pager, next"
+          :total="pageInfo.total_page * 10"
+        />
       </div>
     </main>
 
@@ -333,48 +202,6 @@
   </div>
 </template>
 
-<script setup lang="ts">
-// 这里可以添加 TypeScript 逻辑
-import { ref, onMounted } from 'vue'
-
-//选择的标签的排序
-const category_index = ref<number>(0)
-
-// 示例：管理文章数据
-const articles = ref([
-  {
-    title: '深入理解Vue3响应式原理',
-    excerpt:
-      '本文将深入探讨Vue3的响应式系统，通过Proxy实现的响应式机制与Vue2的差异，以及Composition API如何改变我们的开发方式...',
-    tag: '编程',
-    author: '张明',
-    date: '2023年6月15日',
-    views: 2500,
-    likes: 128,
-    image:
-      'https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
-    avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-  },
-  // 其他文章数据...
-])
-
-// 示例：分页功能
-const currentPage = ref(1)
-const totalPages = ref(10)
-
-const changePage = (page: number) => {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page
-    // 加载对应页面的文章数据
-    console.log(`加载第 ${page} 页`)
-  }
-}
-
-onMounted(() => {
-  // 页面加载完成后可以执行一些初始化操作
-})
-</script>
-
 <style scoped>
 .container {
   max-width: 1200px;
@@ -432,118 +259,6 @@ onMounted(() => {
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 30px;
   margin-bottom: 60px;
-}
-
-.article-card {
-  background: var(--card-bg);
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: var(--card-hover-bg);
-  transition: all 0.4s;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.article-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 15px 30px var(--card-hover-bg);
-}
-
-.card-header {
-  position: relative;
-  height: 200px;
-  overflow: hidden;
-}
-
-.card-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.5s ease;
-}
-
-.article-card:hover .card-image {
-  transform: scale(1.05);
-}
-
-.card-tag {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  background: var(--tag-bg);
-  padding: 5px 15px;
-  border-radius: 30px;
-  font-size: 0.85rem;
-  font-weight: 500;
-}
-
-.card-body {
-  padding: 25px;
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.card-title {
-  font-size: 1.4rem;
-  margin-bottom: 15px;
-  color: var(--dark);
-  transition: var(--transition);
-}
-
-.article-card:hover .card-title {
-  color: var(--primary);
-}
-
-.card-excerpt {
-  color: var(--gray);
-  margin-bottom: 20px;
-  flex-grow: 1;
-}
-
-.card-meta {
-  display: flex;
-  align-items: center;
-  margin-top: auto;
-  padding-top: 15px;
-  border-top: 1px solid var(--light-gray);
-}
-
-.author-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-  margin-right: 12px;
-  border: 2px solid var(--light-gray);
-}
-
-.author-info {
-  flex-grow: 1;
-}
-
-.author-name {
-  font-weight: 600;
-  font-size: 0.95rem;
-}
-
-.publish-date {
-  color: var(--gray);
-  font-size: 0.85rem;
-}
-
-.stats {
-  display: flex;
-  gap: 15px;
-}
-
-.stat {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--gray);
-  font-size: 0.9rem;
 }
 
 /* 侧边栏 */

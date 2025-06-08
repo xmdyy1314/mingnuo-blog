@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useUserInfoStore } from '@/stores'
 import '@/assets/iconfont/iconfont.css'
 import { publishBlogServer } from '@/api/blog'
+import router from '@/router'
 //是否预览
 const isShow = ref<boolean>(false)
 
@@ -17,6 +19,9 @@ const summary = ref<string>('')
 //类别
 const category = ref('technology')
 
+//禁用按钮，防止重复提交
+const isDisabled = ref<boolean>(false)
+
 //发布博客或者保存为草稿箱
 const saveBlogContent = async (status: string) => {
   //首先要进行一个校验，不能发布空的东西
@@ -25,10 +30,21 @@ const saveBlogContent = async (status: string) => {
   if (!title.value || !content.value) {
     return ElMessage.error('博客的标题或内容为空！不可发帖')
   }
+  isDisabled.value = !isDisabled.value
   try {
-    await publishBlogServer(title.value, summary.value, content.value, status, category.value)
+    const res = await (
+      await publishBlogServer(title.value, summary.value, content.value, status, category.value)
+    ).data
+    //这里表示博客发布成功了。要进行提示
+    //博客发布成功了 直接重定向到详情界面
+    setTimeout(() => {
+      router.replace({ name: 'detailArticle', params: { id: res.data.blog_id } })
+      ElMessage.success('博客发布成功')
+      isDisabled.value = !isDisabled.value
+    })
   } catch (error: any) {
-    ElMessage.error(error.response.data.error)
+    ElMessage.error(error.response.data.message)
+    isDisabled.value = !isDisabled.value
   }
 }
 
@@ -44,6 +60,21 @@ const handlePreview = () => {
   }
 }
 
+//用来处理上传的封面图
+const coverImage = ref({
+  name: '',
+  url: '',
+  raw: '',
+})
+
+const handleFileChange = (file: any, fileListParam: []) => {
+  const originalName = file.name
+  const fileExtension = originalName.substring(originalName.lastIndexOf('.') + 1)
+  coverImage.value.name = String(Date.now()) + fileExtension
+  coverImage.value.url = URL.createObjectURL(file.raw)
+  coverImage.value.raw = file.row
+}
+
 const tags = ref(['人工智能', '医疗科技', '创新'])
 const newTag = ref('')
 const coverPreview = ref('')
@@ -55,8 +86,8 @@ const publishDate = ref('')
 
 // 用户信息
 const user = ref({
-  name: '张博士',
-  avatar: '',
+  name: '',
+  avatar_url: '',
 })
 
 // 计算属性
@@ -89,19 +120,12 @@ const formattedPublishDate = computed(() => {
   })
 })
 
-const addTag = () => {
-  if (newTag.value.trim() && !tags.value.includes(newTag.value.trim())) {
-    tags.value.push(newTag.value.trim())
-    newTag.value = ''
-  }
-}
-
-const removeTag = (index: number) => {
-  tags.value.splice(index, 1)
-}
-
-// 初始化富文本编辑器
-onMounted(() => {})
+const isDarkMode = ref<boolean>(false)
+//获取用户的信息
+const userStore = useUserInfoStore()
+onMounted(() => {
+  user.value.name = userStore.UserInfo.nick_name
+})
 </script>
 
 <template>
@@ -112,10 +136,10 @@ onMounted(() => {})
         <h1>创作中心</h1>
       </div>
       <div class="user-actions">
-        <button class="btn btn-outline" @click="saveBlogContent('草稿')">
+        <button class="btn btn-outline" :disabled="isDisabled" @click="saveBlogContent('草稿')">
           <i class="iconfont icon-baocun"></i> 保存草稿
         </button>
-        <button class="btn btn-primary" @click="saveBlogContent('待审核')">
+        <button class="btn btn-primary" :disabled="isDisabled" @click="saveBlogContent('待审核')">
           <i class="iconfont icon-fabu"></i> 发布文章
         </button>
       </div>
@@ -133,27 +157,22 @@ onMounted(() => {})
           />
         </div>
 
-        <!-- <div class="form-group">
+        <div class="form-group">
           <h2 class="panel-title"><i class="fas fa-image"></i> 封面图片</h2>
-          <div class="cover-upload" @click="triggerFileInput">
-            <i class="fas fa-cloud-upload-alt"></i>
-            <h3>上传封面图片</h3>
-            <p>点击或拖放图片到此处 (推荐尺寸: 1200×630像素)</p>
-          </div>
-          <div class="cover-preview" :class="{ active: coverPreview }">
-            <img :src="coverPreview" alt="封面预览" />
-            <button class="remove-cover" @click="removeCover">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          <input
-            type="file"
-            ref="fileInput"
-            accept="image/*"
-            style="display: none"
-            @change="handleCoverUpload"
-          />
-        </div> -->
+          <el-upload
+            class="upload-demo"
+            drag
+            :auto-upload="false"
+            :on-change="handleFileChange"
+            multiple
+          >
+            <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+            <div class="el-upload__text">拖放图片到此处<em>或点击此处</em></div>
+            <template #tip>
+              <!-- <div class="el-upload__tip"></div> -->
+            </template>
+          </el-upload>
+        </div>
 
         <div class="form-group">
           <h2 class="panel-title"><i class="fas fa-align-left"></i> 文章摘要</h2>
@@ -167,23 +186,24 @@ onMounted(() => {})
 
         <div class="form-group">
           <h2 class="panel-title"><i class="fas fa-edit"></i> 文章内容</h2>
-          <tinymceEditor ref="editRef"></tinymceEditor>
+          <wangEditor ref="editRef"></wangEditor>
         </div>
 
         <div class="form-group">
           <h2 class="panel-title"><i class="fas fa-folder"></i> 分类</h2>
           <select class="form-control" v-model="category">
-            <option value="technology">技术</option>
+            <option value="tech">技术</option>
             <option value="design">设计</option>
             <option value="technology">科技</option>
             <option value="life">生活</option>
             <option value="programming">编程</option>
             <option value="photography">摄影</option>
             <option value="travel">旅行</option>
+            <option value="other">其他</option>
           </select>
         </div>
 
-        <div class="form-group">
+        <!-- <div class="form-group">
           <h2 class="panel-title"><i class="fas fa-tags"></i> 标签</h2>
           <div class="tags-container">
             <div class="tag" v-for="(tag, index) in tags" :key="index">
@@ -197,7 +217,7 @@ onMounted(() => {})
               @keyup.enter="addTag"
             />
           </div>
-        </div>
+        </div> -->
 
         <div class="form-group">
           <h2 class="panel-title"><i class="fas fa-cog"></i> 发布设置</h2>
@@ -230,7 +250,9 @@ onMounted(() => {})
             <i class="iconfont icon-yulan"></i> 预览
           </button>
           <button class="btn btn-outline"><i class="iconfont icon-daochu"></i> 导出</button>
-          <button class="btn btn-primary"><i class="iconfont icon-fabu"></i> 发布文章</button>
+          <button class="btn btn-primary" :disabled="isDisabled" @click="saveBlogContent('待审核')">
+            <i class="iconfont icon-fabu"></i> 发布文章
+          </button>
         </div>
       </div>
     </div>
@@ -245,7 +267,7 @@ onMounted(() => {})
           <span><i class="fas fa-folder"></i> {{ category || '未分类' }}</span>
         </div>
         <div class="preview-cover" :class="{ blank: !coverPreview }">
-          <img v-if="coverPreview" :src="coverPreview" alt="文章封面" />
+          <img v-if="coverImage.url" :src="coverImage.url" alt="文章封面" />
           <p v-else>封面图片预览区域</p>
         </div>
         <div class="preview-summary" v-if="summary">
@@ -618,7 +640,7 @@ header {
 
 .preview-cover {
   width: 100%;
-  height: 220px;
+  max-height: 250px;
   border-radius: 10px;
   margin-bottom: 25px;
   display: flex;

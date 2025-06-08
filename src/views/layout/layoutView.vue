@@ -1,358 +1,31 @@
-<template>
-  <div class="header-container" :class="{ 'dark-mode': isDarkMode }">
-    <!-- 动态背景层 -->
-    <div class="dynamic-bg"></div>
-
-    <div class="header-content">
-      <!-- Logo区域 -->
-      <router-link to="/" class="logo" @mouseenter="animateLogo">
-        <div class="logo-icon">
-          <i class="el-icon-notebook-2"></i>
-          <div class="logo-pulse"></div>
-        </div>
-        <div class="logo-text">
-          <span>明诺</span>
-          <span class="logo-dot">·</span>
-          <span>光笺</span>
-        </div>
-      </router-link>
-
-      <!-- 桌面端导航菜单 -->
-      <div class="desktop-nav">
-        <el-menu
-          :default-active="activeIndex"
-          mode="horizontal"
-          background-color="transparent"
-          text-color="var(--text-color)"
-          active-text-color="var(--primary-color)"
-          @select="handleSelect"
-        >
-          <el-menu-item index="/index">
-            <el-icon><House /></el-icon>
-            <span>首页</span>
-          </el-menu-item>
-          <el-menu-item index="/articles">
-            <el-icon><Reading /></el-icon>
-            <span>文章</span>
-          </el-menu-item>
-          <el-sub-menu index="categories">
-            <template #title>
-              <el-icon><Folder /></el-icon>
-              <span>分类</span>
-            </template>
-            <el-menu-item index="/tech">
-              <el-icon><Cpu /></el-icon>
-              <span>技术</span>
-            </el-menu-item>
-            <el-menu-item index="/life">
-              <el-icon><CoffeeCup /></el-icon>
-              <span>生活</span>
-            </el-menu-item>
-            <el-menu-item index="/travel">
-              <el-icon><Location /></el-icon>
-              <span>旅行</span>
-            </el-menu-item>
-            <el-menu-item index="/photography">
-              <el-icon><Camera /></el-icon>
-              <span>摄影</span>
-            </el-menu-item>
-          </el-sub-menu>
-          <el-menu-item index="/about">
-            <el-icon><InfoFilled /></el-icon>
-            <span>关于</span>
-          </el-menu-item>
-        </el-menu>
-      </div>
-
-      <!-- 右侧功能区 -->
-      <div class="right-actions">
-        <!-- 搜索框 -->
-        <el-popover placement="bottom" :width="320" trigger="click" v-model="searchPopoverVisible">
-          <template #reference>
-            <div class="search-container" :class="{ active: searchPopoverVisible }">
-              <el-input
-                v-model="searchQuery"
-                placeholder="搜索文章..."
-                class="search-input"
-                @focus="searchPopoverVisible = true"
-              >
-                <template #prefix>
-                  <el-icon><Search /></el-icon>
-                </template>
-              </el-input>
-            </div>
-          </template>
-
-          <div class="search-popover">
-            <div v-if="searchHistory.length > 0">
-              <div class="popover-header">
-                <span>最近搜索</span>
-                <el-link type="info" @click="clearSearchHistory">清空</el-link>
-              </div>
-              <div class="search-history">
-                <el-tag
-                  v-for="(item, index) in searchHistory"
-                  :key="index"
-                  class="history-tag"
-                  @click="searchFromHistory(item)"
-                >
-                  {{ item }}
-                  <el-icon class="close-icon" @click.stop="removeSearchHistory(index)">
-                    <Close />
-                  </el-icon>
-                </el-tag>
-              </div>
-            </div>
-
-            <div class="search-suggestions">
-              <div class="popover-header">
-                <span>热门搜索</span>
-              </div>
-              <div class="suggestion-list">
-                <div
-                  v-for="(suggestion, index) in searchSuggestions"
-                  :key="index"
-                  class="suggestion-item"
-                  @click="selectSuggestion(suggestion)"
-                >
-                  <el-icon><Search /></el-icon>
-                  <span>{{ suggestion.value }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </el-popover>
-
-        <!-- 深色模式切换 -->
-        <el-tooltip
-          effect="dark"
-          :content="isDarkMode ? '切换到亮色模式' : '切换到深色模式'"
-          placement="bottom"
-        >
-          <div class="theme-switch" @click="toggleTheme">
-            <transition name="fade" mode="out-in">
-              <el-icon v-if="!isDarkMode" key="sun"><Sunny /></el-icon>
-              <el-icon v-else key="moon"><Moon /></el-icon>
-            </transition>
-          </div>
-        </el-tooltip>
-
-        <!-- 通知区域 -->
-        <el-popover placement="bottom" :width="300" trigger="click">
-          <template #reference>
-            <div class="notification-bell">
-              <el-badge :value="unreadNotifications" :max="99" class="badge">
-                <el-icon><Bell /></el-icon>
-              </el-badge>
-            </div>
-          </template>
-          <div class="notifications-popover">
-            <div class="notifications-header">
-              <h3>通知</h3>
-              <el-link type="primary" underline="never">全部已读</el-link>
-            </div>
-            <div class="notifications-list">
-              <div v-for="(item, index) in notifications" :key="index" class="notification-item">
-                <div class="notification-icon" :class="item.type">
-                  <el-icon v-if="item.type === 'comment'"><ChatDotRound /></el-icon>
-                  <el-icon v-if="item.type === 'like'"><Goods /></el-icon>
-                  <el-icon v-if="item.type === 'system'"><BellFilled /></el-icon>
-                </div>
-                <div class="notification-content">
-                  <div class="notification-title">{{ item.title }}</div>
-                  <div class="notification-time">{{ item.time }}</div>
-                </div>
-              </div>
-            </div>
-            <div class="notifications-footer">
-              <el-link type="primary" underline="never">查看所有通知</el-link>
-            </div>
-          </div>
-        </el-popover>
-
-        <!-- 用户区域 -->
-        <el-popover placement="bottom-end" :width="280" trigger="click" popper-class="user-popover">
-          <template #reference>
-            <div class="user-area">
-              <div class="user-avatar">
-                <el-avatar :size="40" :src="user.avatar" />
-                <div class="online-status"></div>
-              </div>
-              <div class="user-info">
-                <div class="user-name">{{ user.name }}</div>
-                <div class="user-role">高级会员</div>
-              </div>
-            </div>
-          </template>
-
-          <div class="user-card">
-            <div class="card-header">
-              <div class="user-avatar-large">
-                <el-avatar :size="60" :src="user.avatar" />
-                <div class="online-status-large"></div>
-              </div>
-              <div class="user-info-large">
-                <div class="user-name">{{ user.name }}</div>
-                <div class="user-email">{{ user.email }}</div>
-              </div>
-            </div>
-
-            <el-divider />
-
-            <div class="card-stats">
-              <div class="stat-item">
-                <div class="stat-value">128</div>
-                <div class="stat-label">文章</div>
-              </div>
-              <div class="stat-item">
-                <div class="stat-value">5.6K</div>
-                <div class="stat-label">粉丝</div>
-              </div>
-              <div class="stat-item">
-                <div class="stat-value">24</div>
-                <div class="stat-label">收藏</div>
-              </div>
-            </div>
-
-            <el-divider />
-
-            <div class="card-actions">
-              <el-button
-                type="primary"
-                plain
-                class="action-button"
-                @click="router.push({ name: 'profileView', params: { userId: user.id } })"
-              >
-                <el-icon><User /></el-icon>
-                <span>个人中心</span>
-              </el-button>
-              <el-button type="success" plain class="action-button" @click="handleToEdit">
-                <el-icon><EditPen /></el-icon>
-                <span>写文章</span>
-              </el-button>
-            </div>
-
-            <div class="card-footer">
-              <el-button type="danger" text @click="handleLogout">
-                <el-icon><SwitchButton /></el-icon>
-                <span>退出登录</span>
-              </el-button>
-            </div>
-          </div>
-        </el-popover>
-      </div>
-      <!-- 移动端菜单按钮 -->
-      <div class="mobile-menu-btn" @click="drawerVisible = true">
-        <el-icon><Menu /></el-icon>
-      </div>
-    </div>
-    <!-- 移动端抽屉菜单 -->
-    <el-drawer
-      v-model="drawerVisible"
-      title="导航菜单"
-      direction="rtl"
-      size="80%"
-      class="mobile-drawer"
-    >
-      <div class="mobile-nav">
-        <el-menu :default-active="activeIndex" class="mobile-menu" @select="handleSelect">
-          <el-menu-item index="/">
-            <el-icon><House /></el-icon>
-            <span>首页</span>
-          </el-menu-item>
-          <el-menu-item index="/articles">
-            <el-icon><Reading /></el-icon>
-            <span>文章</span>
-          </el-menu-item>
-          <el-sub-menu index="categories">
-            <template #title>
-              <el-icon><Folder /></el-icon>
-              <span>分类</span>
-            </template>
-            <el-menu-item index="/tech">
-              <el-icon><Cpu /></el-icon>
-              <span>技术</span>
-            </el-menu-item>
-            <el-menu-item index="/life">
-              <el-icon><CoffeeCup /></el-icon>
-              <span>生活</span>
-            </el-menu-item>
-            <el-menu-item index="/travel">
-              <el-icon><Location /></el-icon>
-              <span>旅行</span>
-            </el-menu-item>
-            <el-menu-item index="/photography">
-              <el-icon><Camera /></el-icon>
-              <span>摄影</span>
-            </el-menu-item>
-          </el-sub-menu>
-          <el-menu-item index="/about">
-            <el-icon><InfoFilled /></el-icon>
-            <span>关于</span>
-          </el-menu-item>
-          <el-menu-item index="/profile">
-            <el-icon><User /></el-icon>
-            <span>个人中心</span>
-          </el-menu-item>
-          <el-menu-item index="/write">
-            <el-icon><EditPen /></el-icon>
-            <span>写文章</span>
-          </el-menu-item>
-        </el-menu>
-
-        <div class="mobile-user-card">
-          <div class="mobile-user-info">
-            <el-avatar :size="48" :src="user.avatar" />
-            <div>
-              <div class="mobile-user-name">{{ user.name }}</div>
-              <div class="mobile-user-role">高级会员</div>
-            </div>
-          </div>
-          <div class="mobile-user-stats">
-            <div class="stat">
-              <div class="value">128</div>
-              <div class="label">文章</div>
-            </div>
-            <div class="stat">
-              <div class="value">5.6K</div>
-              <div class="label">粉丝</div>
-            </div>
-            <div class="stat">
-              <div class="value">24</div>
-              <div class="label">收藏</div>
-            </div>
-          </div>
-          <el-button type="danger" text @click="handleLogout">
-            <el-icon><SwitchButton /></el-icon>
-            <span>退出登录</span>
-          </el-button>
-        </div>
-      </div>
-    </el-drawer>
-  </div>
-
-  <div class="theme_mode">
-    <router-view></router-view>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserInfoStore } from '@/stores'
 
 //跳转到字文章的界面，应该单独开一页才好
-const handleToEdit = () => {
-  const fullPath = router.resolve({ name: 'editArticleView' }).href
-  window.open(fullPath, '_blank')
-}
 
 // 用户信息类型
 interface UserInfo {
   id: number
-  name: string
-  avatar: string
+  nick_name: string
+  avatar_url: string
   email: string
 }
+
+// 用户数据
+const user = ref<UserInfo>({
+  id: -1,
+  nick_name: '',
+  avatar_url: '/avatar.jpg',
+  email: '',
+})
+
+//用户的个人信息仓库
+const userStore = useUserInfoStore()
+
+//是否为登录状态
+const isLoggedIn = ref(true)
 
 // 搜索建议类型
 interface SearchSuggestion {
@@ -376,18 +49,9 @@ const activeIndex = ref('/')
 const drawerVisible = ref(false)
 const searchQuery = ref('')
 const isDarkMode = ref(false)
-const isLoggedIn = ref(true)
 const searchPopoverVisible = ref(false)
 const unreadNotifications = ref(3)
 const logoAnimating = ref(false)
-
-// 模拟用户数据
-const user = ref<UserInfo>({
-  id: 1,
-  name: '明诺',
-  avatar: '../../../public/avatar.jpg',
-  email: '1747951787@qq.com',
-})
 
 // 搜索历史
 const searchHistory = ref<string[]>(['Vue3', 'TypeScript', '响应式设计', '前端工程化'])
@@ -484,8 +148,16 @@ const animateLogo = () => {
 const handleLogout = () => {
   drawerVisible.value = false
   isLoggedIn.value = false
+  localStorage.removeItem('user')
+  userStore.clearUserInfo()
+  userStore.removeToken()
   console.log('用户已退出登录')
   router.push('/')
+}
+
+const handleToEdit = () => {
+  const fullPath = router.resolve({ name: 'editArticleView' }).href
+  window.open(fullPath, '_blank')
 }
 
 //定义一个主题变量
@@ -496,11 +168,398 @@ onMounted(() => {
   if (isDarkMode.value) {
     document.documentElement.classList.add('dark-mode')
   }
+  //通过token来判断是否已经登录。
+  isLoggedIn.value = userStore.token ? true : false
 
-  // 设置当前活动菜单项
-  activeIndex.value = router.currentRoute.value.path
+  //进来的时候先获取用户的信息
+  user.value.id = Number(userStore.UserInfo.id)
+
+  user.value.avatar_url = userStore.UserInfo.avatar_url
+    ? userStore.UserInfo.avatar_url
+    : user.value.avatar_url
+  user.value.nick_name = userStore.UserInfo.nick_name
+    ? userStore.UserInfo.nick_name
+    : userStore.UserInfo.username
+  user.value.email = userStore.UserInfo.email
 })
 </script>
+
+<template>
+  <div class="header-container" :class="{ 'dark-mode': isDarkMode }">
+    <!-- 动态背景层 -->
+    <div class="dynamic-bg"></div>
+
+    <div class="header-content">
+      <!-- Logo区域 -->
+      <router-link to="/" class="logo" @mouseenter="animateLogo">
+        <div class="logo-icon">
+          <i class="el-icon-notebook-2"></i>
+          <div class="logo-pulse"></div>
+        </div>
+        <div class="logo-text">
+          <span>明诺</span>
+          <span class="logo-dot">·</span>
+          <span>光笺</span>
+        </div>
+      </router-link>
+
+      <!-- 桌面端导航菜单 -->
+      <div class="desktop-nav">
+        <el-menu
+          :default-active="activeIndex"
+          mode="horizontal"
+          background-color="transparent"
+          text-color="var(--text-color)"
+          active-text-color="var(--primary-color)"
+          @select="handleSelect"
+        >
+          <el-menu-item index="/index">
+            <el-icon><House /></el-icon>
+            <span>首页</span>
+          </el-menu-item>
+          <el-menu-item index="/articles">
+            <el-icon><Reading /></el-icon>
+            <span>文章</span>
+          </el-menu-item>
+          <el-sub-menu index="categories">
+            <template #title>
+              <el-icon><Folder /></el-icon>
+              <span>分类</span>
+            </template>
+            <el-menu-item index="/tech">
+              <el-icon><Cpu /></el-icon>
+              <span>技术</span>
+            </el-menu-item>
+            <el-menu-item index="/life">
+              <el-icon><CoffeeCup /></el-icon>
+              <span>生活</span>
+            </el-menu-item>
+            <el-menu-item index="/travel">
+              <el-icon><Location /></el-icon>
+              <span>旅行</span>
+            </el-menu-item>
+            <el-menu-item index="/photography">
+              <el-icon><Camera /></el-icon>
+              <span>摄影</span>
+            </el-menu-item>
+          </el-sub-menu>
+          <el-menu-item index="/about">
+            <el-icon><InfoFilled /></el-icon>
+            <span>关于</span>
+          </el-menu-item>
+        </el-menu>
+      </div>
+
+      <!-- 右侧功能区 -->
+      <div class="right-actions">
+        <!-- 搜索框 -->
+        <el-popover placement="bottom" :width="320" trigger="click" v-model="searchPopoverVisible">
+          <template #reference>
+            <div class="search-container" :class="{ active: searchPopoverVisible }">
+              <el-input
+                v-model="searchQuery"
+                placeholder="搜索文章..."
+                class="search-input"
+                @focus="searchPopoverVisible = true"
+              >
+                <template #prefix>
+                  <el-icon><Search /></el-icon>
+                </template>
+              </el-input>
+            </div>
+          </template>
+
+          <div class="search-popover">
+            <div v-if="searchHistory.length > 0">
+              <div class="popover-header">
+                <span>最近搜索</span>
+                <el-link @click="clearSearchHistory">清空</el-link>
+              </div>
+              <div class="search-history">
+                <el-tag
+                  v-for="(item, index) in searchHistory"
+                  :key="index"
+                  class="history-tag"
+                  @click="searchFromHistory(item)"
+                >
+                  {{ item }}
+                  <el-icon class="close-icon" @click.stop="removeSearchHistory(index)">
+                    <Close />
+                  </el-icon>
+                </el-tag>
+              </div>
+            </div>
+
+            <div class="search-suggestions">
+              <div class="popover-header">
+                <span>热门搜索</span>
+              </div>
+              <div class="suggestion-list">
+                <div
+                  v-for="(suggestion, index) in searchSuggestions"
+                  :key="index"
+                  class="suggestion-item"
+                  @click="selectSuggestion(suggestion)"
+                >
+                  <el-icon><Search /></el-icon>
+                  <span>{{ suggestion.value }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </el-popover>
+
+        <!-- 深色模式切换 -->
+        <el-tooltip
+          effect="dark"
+          :content="isDarkMode ? '切换到亮色模式' : '切换到深色模式'"
+          placement="bottom"
+        >
+          <div class="theme-switch" @click="toggleTheme">
+            <transition name="fade" mode="out-in">
+              <el-icon v-if="!isDarkMode" key="sun"><Sunny /></el-icon>
+              <el-icon v-else key="moon"><Moon /></el-icon>
+            </transition>
+          </div>
+        </el-tooltip>
+
+        <!-- 通知区域 -->
+        <el-popover placement="bottom" :width="300" trigger="click" v-if="isLoggedIn">
+          <template #reference>
+            <div class="notification-bell">
+              <el-badge :value="unreadNotifications" :max="99" class="badge">
+                <el-icon><Bell /></el-icon>
+              </el-badge>
+            </div>
+          </template>
+          <div class="notifications-popover">
+            <div class="notifications-header">
+              <h3>通知</h3>
+              <el-link>全部已读</el-link>
+            </div>
+            <div class="notifications-list">
+              <div v-for="(item, index) in notifications" :key="index" class="notification-item">
+                <div class="notification-icon" :class="item.type">
+                  <el-icon v-if="item.type === 'comment'"><ChatDotRound /></el-icon>
+                  <el-icon v-if="item.type === 'like'"><Goods /></el-icon>
+                  <el-icon v-if="item.type === 'system'"><BellFilled /></el-icon>
+                </div>
+                <div class="notification-content">
+                  <div class="notification-title">{{ item.title }}</div>
+                  <div class="notification-time">{{ item.time }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="notifications-footer">
+              <el-link type="primary" underline="never">查看所有通知</el-link>
+            </div>
+          </div>
+        </el-popover>
+
+        <!-- 用户区域 -->
+        <!-- 登录的时候 -->
+        <el-popover
+          placement="bottom-end"
+          :width="280"
+          trigger="click"
+          popper-class="user-popover"
+          v-if="isLoggedIn"
+        >
+          <template #reference>
+            <div class="user-area">
+              <div class="user-avatar">
+                <el-avatar :size="40" :src="user.avatar_url" />
+                <div class="online-status"></div>
+              </div>
+              <div class="user-info">
+                <div class="user-name">{{ user.nick_name }}</div>
+                <div class="user-role">高级会员</div>
+              </div>
+            </div>
+          </template>
+
+          <div class="user-card">
+            <div class="card-header">
+              <div class="user-avatar-large">
+                <el-avatar :size="60" :src="user.avatar_url" />
+                <div class="online-status-large"></div>
+              </div>
+              <div class="user-info-large">
+                <div class="user-name">{{ user.nick_name }}</div>
+                <div class="user-email">{{ user.email }}</div>
+              </div>
+            </div>
+
+            <el-divider />
+
+            <div class="card-stats">
+              <div class="stat-item">
+                <div class="stat-value">128</div>
+                <div class="stat-label">文章</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value">5.6K</div>
+                <div class="stat-label">粉丝</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value">24</div>
+                <div class="stat-label">收藏</div>
+              </div>
+            </div>
+
+            <el-divider />
+
+            <div class="card-actions">
+              <el-button
+                type="primary"
+                plain
+                class="action-button"
+                @click="router.push({ name: 'profileView', params: { userId: user.id } })"
+              >
+                <el-icon><User /></el-icon>
+                <span>个人中心</span>
+              </el-button>
+              <el-button type="success" plain class="action-button" @click="handleToEdit">
+                <el-icon><EditPen /></el-icon>
+                <span>写文章</span>
+              </el-button>
+            </div>
+
+            <div class="card-footer">
+              <el-button type="danger" text @click="handleLogout">
+                <el-icon><SwitchButton /></el-icon>
+                <span>退出登录</span>
+              </el-button>
+            </div>
+          </div>
+        </el-popover>
+
+        <!--未登录的时候 -->
+        <el-popover
+          placement="bottom-end"
+          :width="70"
+          trigger="click"
+          popper-class="user-popover"
+          class="noLogin"
+          v-else
+        >
+          <template #reference>
+            <div class="user-area">
+              <div class="user-avatar">
+                <el-avatar :size="40" icon="User" style="font-size: 25px" />
+              </div>
+              <div class="user-info">
+                <!-- <div class="user-name">明诺光笺</div> -->
+                <div class="user-role">点击登录</div>
+              </div>
+            </div>
+          </template>
+
+          <div class="user-card">
+            <div class="card-footer" style="text-align: center">
+              <el-button type="primary" text @click="router.push({ name: 'loginView' })">
+                <el-icon><Right /></el-icon>
+                <span>去登录</span>
+              </el-button>
+            </div>
+          </div>
+        </el-popover>
+      </div>
+
+      <!-- 移动端菜单按钮 -->
+      <!-- <div class="mobile-menu-btn" @click="drawerVisible = true">
+        <el-icon><Menu /></el-icon>
+      </div> -->
+    </div>
+    <!-- 移动端抽屉菜单 -->
+    <!-- <el-drawer
+      v-model="drawerVisible"
+      title="导航菜单"
+      direction="rtl"
+      size="80%"
+      class="mobile-drawer"
+    >
+      <div class="mobile-nav">
+        <el-menu :default-active="activeIndex" class="mobile-menu" @select="handleSelect">
+          <el-menu-item index="/">
+            <el-icon><House /></el-icon>
+            <span>首页</span>
+          </el-menu-item>
+          <el-menu-item index="/articles">
+            <el-icon><Reading /></el-icon>
+            <span>文章</span>
+          </el-menu-item>
+          <el-sub-menu index="categories">
+            <template #title>
+              <el-icon><Folder /></el-icon>
+              <span>分类</span>
+            </template>
+            <el-menu-item index="/tech">
+              <el-icon><Cpu /></el-icon>
+              <span>技术</span>
+            </el-menu-item>
+            <el-menu-item index="/life">
+              <el-icon><CoffeeCup /></el-icon>
+              <span>生活</span>
+            </el-menu-item>
+            <el-menu-item index="/travel">
+              <el-icon><Location /></el-icon>
+              <span>旅行</span>
+            </el-menu-item>
+            <el-menu-item index="/photography">
+              <el-icon><Camera /></el-icon>
+              <span>摄影</span>
+            </el-menu-item>
+          </el-sub-menu>
+          <el-menu-item index="/about">
+            <el-icon><InfoFilled /></el-icon>
+            <span>关于</span>
+          </el-menu-item>
+          <el-menu-item index="/profile">
+            <el-icon><User /></el-icon>
+            <span>个人中心</span>
+          </el-menu-item>
+          <el-menu-item index="/write">
+            <el-icon><EditPen /></el-icon>
+            <span>写文章</span>
+          </el-menu-item>
+        </el-menu>
+
+        <div class="mobile-user-card">
+          <div class="mobile-user-info">
+            <el-avatar :size="48" :src="user.avatar_url" />
+            <div>
+              <div class="mobile-user-name">{{ user.nick_name }}</div>
+              <div class="mobile-user-role">高级会员</div>
+            </div>
+          </div>
+          <div class="mobile-user-stats">
+            <div class="stat">
+              <div class="value">128</div>
+              <div class="label">文章</div>
+            </div>
+            <div class="stat">
+              <div class="value">5.6K</div>
+              <div class="label">粉丝</div>
+            </div>
+            <div class="stat">
+              <div class="value">24</div>
+              <div class="label">收藏</div>
+            </div>
+          </div>
+          <el-button type="danger" text @click="handleLogout">
+            <el-icon><SwitchButton /></el-icon>
+            <span>退出登录</span>
+          </el-button>
+        </div>
+      </div>
+    </el-drawer> -->
+  </div>
+
+  <div class="theme_mode">
+    <router-view></router-view>
+  </div>
+</template>
 
 <style scoped lang="scss">
 .theme_mode {

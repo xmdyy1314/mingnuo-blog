@@ -180,7 +180,14 @@ const handleLogin = async () => {
     const res = (await loginAuthServer(loginForm.username, loginForm.password)).data
     userStore.setToken(res.token)
     //将个人信息的用户名以及邮箱都存进去
-    userStore.setUserInfo(res.user.id, res.user.username, res.user.email, res.user.permissions)
+    userStore.setUserInfo(
+      res.user.id,
+      res.user.username,
+      res.user.nick_name,
+      res.user.email,
+      res.user.avatar_url,
+      res.user.permissions,
+    )
     router.replace({ name: 'indexView' })
     ElMessage.success('登录成功！')
   } catch (error: any) {

@@ -1,51 +1,17 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserInfoStore } from '@/stores/modules/user'
 
+import authRoutes from './auth'
+import adminRoutes from './admin'
+
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    {
-      path: '/activate/:code', //激活页面
-      name: 'authActiveView',
-      component: () => import('@/views/activeAuth/activeView.vue'),
-    },
-    {
-      path: '/login', //登录页面
-      name: 'loginView',
-      component: () => import('@/views/loginRegister/loginView.vue'),
-    },
-    {
-      path: '/profile/:userId',
-      name: 'profileView',
-      component: () => import('@/views/profileView/profileView.vue'),
-    },
-    {
-      path: '/article/edit',
-      name: 'editArticleView',
-      component: () => import('@/views/editArticle.vue/editArticle.vue'),
-    },
-    {
-      path: '/',
-      component: () => import('@/views/layout/layoutView.vue'),
-      redirect: '/index',
-      children: [
-        {
-          path: '/index',
-          component: () => import('@/views/homeView/indexView.vue'),
-          name: 'indexView',
-        },
-        {
-          path: '/article/:id',
-          component: () => import('@/components/article/articleView.vue'),
-          name: 'detailArticle',
-        },
-        {
-          path: '/articles',
-          component: () => import('@/views/articlesView/articlesView.vue'),
-          name: 'articlesList',
-        },
-      ],
-    },
+    //博客系统的路由
+    ...authRoutes,
+
+    //管理员端的路由
+    ...adminRoutes,
   ],
 })
 

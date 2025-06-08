@@ -8,6 +8,7 @@ interface articleType {
   id: number
   user_id: number
   nick_name: string
+  avatar_url: string
   title: string
   content: string
   updated_at: string
@@ -32,6 +33,7 @@ const loadArticle = async () => {
       id: res.blog.id,
       user_id: res.author.id,
       nick_name: res.author.nick_name,
+      avatar_url: res.author.avatar_url,
       title: res.blog.title,
       content: res.blog.content,
       updated_at: res.blog.created_at,
@@ -63,7 +65,7 @@ onMounted(async () => {
 
       <div class="article-meta">
         <div class="author-info">
-          <!-- <img :src="detailArticle.authorAvatar" alt="作者头像" class="author-avatar" /> -->
+          <img :src="detailArticle.avatar_url" alt="作者头像" class="author-avatar" />
           <div class="author-details">
             <span class="author-name">{{ detailArticle.nick_name }}</span>
             <div class="publish-info">
@@ -159,7 +161,6 @@ onMounted(async () => {
 }
 
 .publish-info {
-  color: #666;
   font-size: 0.9rem;
 }
 
