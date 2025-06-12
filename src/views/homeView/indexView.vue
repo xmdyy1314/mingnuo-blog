@@ -20,7 +20,7 @@
       <section class="featured-articles">
         <div class="section-header">
           <h2 class="section-title">精选文章</h2>
-          <el-link type="primary" :underline="false" @click="$router.push('/articles')"
+          <el-link type="primary" underline="never" @click="$router.push('/articles')"
             >查看全部</el-link
           >
         </div>
@@ -53,7 +53,7 @@
                     {{ tag }}
                   </el-tag>
                 </div>
-                <el-button type="text" @click="$router.push(article.link)">阅读全文</el-button>
+                <el-button link @click="$router.push(article.link)">阅读全文</el-button>
               </div>
             </div>
           </el-card>
@@ -128,7 +128,7 @@
             </div>
             <div class="comment-article">
               <span>评论文章：</span>
-              <el-link type="primary" :underline="false" @click="$router.push(comment.articleLink)">
+              <el-link type="primary" underline="never" @click="$router.push(comment.articleLink)">
                 {{ comment.articleTitle }}
               </el-link>
             </div>

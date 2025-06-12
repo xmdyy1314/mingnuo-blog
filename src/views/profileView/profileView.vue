@@ -1,906 +1,1044 @@
-<template>
-  <div class="blog-personal-center">
-    <!-- 主内容区 -->
-    <el-main class="main-container">
-      <div class="profile-container">
-        <!-- 左侧个人信息 -->
-        <div class="profile-sidebar">
-          <el-card class="user-card">
-            <div class="user-header">
-              <el-avatar :size="100" :src="userInfo.avatar" />
-              <div class="user-name">{{ userInfo.name }}</div>
-              <div class="user-title">{{ userInfo.title }}</div>
-              <el-tag type="success" effect="dark" round>
-                <el-icon><Star /></el-icon>
-                博主
-              </el-tag>
-            </div>
-
-            <div class="user-stats">
-              <div class="stat-item">
-                <div class="stat-value">{{ userStats.articles }}</div>
-                <div class="stat-label">文章</div>
-              </div>
-              <div class="stat-item">
-                <div class="stat-value">{{ userStats.followers }}</div>
-                <div class="stat-label">粉丝</div>
-              </div>
-              <div class="stat-item">
-                <div class="stat-value">{{ userStats.likes }}</div>
-                <div class="stat-label">获赞</div>
-              </div>
-            </div>
-
-            <div class="user-info">
-              <div class="info-item">
-                <el-icon><User /></el-icon>
-                <span>用户名: {{ userInfo.username }}</span>
-              </div>
-              <div class="info-item">
-                <el-icon><Location /></el-icon>
-                <span>地区: {{ userInfo.location }}</span>
-              </div>
-              <div class="info-item">
-                <el-icon><Link /></el-icon>
-                <span
-                  >网站:
-                  <a :href="userInfo.website" target="_blank">{{ userInfo.website }}</a></span
-                >
-              </div>
-              <div class="info-item">
-                <el-icon><Calendar /></el-icon>
-                <span>加入时间: {{ userInfo.joinDate }}</span>
-              </div>
-            </div>
-
-            <el-divider />
-
-            <div class="user-bio">
-              <h3>个人简介</h3>
-              <p>{{ userInfo.bio }}</p>
-            </div>
-
-            <el-button type="primary" class="edit-btn" round>
-              <el-icon><Edit /></el-icon>
-              编辑资料
-            </el-button>
-          </el-card>
-
-          <el-card class="skills-card">
-            <h3>技能标签</h3>
-            <div class="skills-tags">
-              <el-tag
-                v-for="(tag, index) in userInfo.skills"
-                :key="index"
-                type="info"
-                class="skill-tag"
-              >
-                {{ tag }}
-              </el-tag>
-            </div>
-          </el-card>
-        </div>
-
-        <!-- 右侧内容区域 -->
-        <div class="profile-content">
-          <el-tabs v-model="activeTab" class="content-tabs">
-            <el-tab-pane label="我的文章" name="articles">
-              <div class="article-list">
-                <div v-for="article in articles" :key="article.id" class="article-item">
-                  <div class="article-cover">
-                    <el-image :src="article.cover" fit="cover" class="cover-img" />
-                  </div>
-                  <div class="article-info">
-                    <div class="article-header">
-                      <h3 class="article-title">{{ article.title }}</h3>
-                      <el-tag
-                        :type="article.status === 'published' ? 'success' : 'warning'"
-                        size="small"
-                      >
-                        {{ article.status === 'published' ? '已发布' : '草稿' }}
-                      </el-tag>
-                    </div>
-                    <p class="article-desc">{{ article.description }}</p>
-                    <div class="article-meta">
-                      <span
-                        ><el-icon><Calendar /></el-icon> {{ article.date }}</span
-                      >
-                      <span
-                        ><el-icon><View /></el-icon> {{ article.views }} 阅读</span
-                      >
-                      <span
-                        ><el-icon><ChatDotRound /></el-icon> {{ article.comments }} 评论</span
-                      >
-                      <span
-                        ><el-icon><Star /></el-icon> {{ article.likes }} 点赞</span
-                      >
-                    </div>
-                  </div>
-                  <div class="article-actions">
-                    <el-button type="primary" size="small" text
-                      ><el-icon><Edit /></el-icon>编辑</el-button
-                    >
-                    <el-button type="danger" size="small" text
-                      ><el-icon><Delete /></el-icon>删除</el-button
-                    >
-                  </div>
-                </div>
-              </div>
-
-              <el-pagination
-                background
-                layout="prev, pager, next"
-                :total="50"
-                :page-size="5"
-                class="pagination"
-              />
-            </el-tab-pane>
-
-            <el-tab-pane label="数据统计" name="stats">
-              <div class="stats-container">
-                <el-row :gutter="20">
-                  <el-col :span="6">
-                    <el-card shadow="hover" class="stat-card">
-                      <div class="stat-icon total-articles">
-                        <el-icon><Document /></el-icon>
-                      </div>
-                      <div class="stat-content">
-                        <div class="stat-value">128</div>
-                        <div class="stat-label">文章总数</div>
-                      </div>
-                    </el-card>
-                  </el-col>
-                  <el-col :span="6">
-                    <el-card shadow="hover" class="stat-card">
-                      <div class="stat-icon total-views">
-                        <el-icon><View /></el-icon>
-                      </div>
-                      <div class="stat-content">
-                        <div class="stat-value">24.8K</div>
-                        <div class="stat-label">总阅读量</div>
-                      </div>
-                    </el-card>
-                  </el-col>
-                  <el-col :span="6">
-                    <el-card shadow="hover" class="stat-card">
-                      <div class="stat-icon total-comments">
-                        <el-icon><ChatDotRound /></el-icon>
-                      </div>
-                      <div class="stat-content">
-                        <div class="stat-value">892</div>
-                        <div class="stat-label">总评论数</div>
-                      </div>
-                    </el-card>
-                  </el-col>
-                  <el-col :span="6">
-                    <el-card shadow="hover" class="stat-card">
-                      <div class="stat-icon total-likes">
-                        <el-icon><Star /></el-icon>
-                      </div>
-                      <div class="stat-content">
-                        <div class="stat-value">5.6K</div>
-                        <div class="stat-label">总点赞数</div>
-                      </div>
-                    </el-card>
-                  </el-col>
-                </el-row>
-
-                <el-card class="chart-card">
-                  <h3>文章数据趋势</h3>
-                  <div class="chart-placeholder">
-                    <!-- 这里实际项目中会放置图表 -->
-                    <el-icon :size="60"><DataAnalysis /></el-icon>
-                    <p>文章阅读量、评论数趋势图表</p>
-                  </div>
-                </el-card>
-
-                <el-card class="popular-articles">
-                  <h3>热门文章</h3>
-                  <ul>
-                    <li v-for="(article, index) in popularArticles" :key="index">
-                      <span class="index">{{ index + 1 }}</span>
-                      <span class="title">{{ article.title }}</span>
-                      <span class="views">{{ article.views }} 阅读</span>
-                    </li>
-                  </ul>
-                </el-card>
-              </div>
-            </el-tab-pane>
-
-            <el-tab-pane label="账号设置" name="settings">
-              <el-form label-width="120px" class="settings-form">
-                <el-form-item label="用户名">
-                  <el-input v-model="settings.username" />
-                </el-form-item>
-
-                <el-form-item label="昵称">
-                  <el-input v-model="settings.name" />
-                </el-form-item>
-
-                <el-form-item label="电子邮箱">
-                  <el-input v-model="settings.email" type="email" />
-                </el-form-item>
-
-                <el-form-item label="个人网站">
-                  <el-input v-model="settings.website" />
-                </el-form-item>
-
-                <el-form-item label="地区">
-                  <el-cascader v-model="settings.location" :options="locationOptions" />
-                </el-form-item>
-
-                <el-form-item label="个人简介">
-                  <el-input v-model="settings.bio" type="textarea" :rows="4" />
-                </el-form-item>
-
-                <el-form-item label="技能标签">
-                  <el-select
-                    v-model="settings.skills"
-                    multiple
-                    filterable
-                    allow-create
-                    placeholder="请添加技能标签"
-                  >
-                    <el-option
-                      v-for="item in skillOptions"
-                      :key="item"
-                      :label="item"
-                      :value="item"
-                    />
-                  </el-select>
-                </el-form-item>
-
-                <el-form-item label="头像">
-                  <el-upload
-                    class="avatar-uploader"
-                    action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15"
-                    :show-file-list="false"
-                    :on-success="handleAvatarSuccess"
-                  >
-                    <img v-if="settings.avatar" :src="settings.avatar" class="avatar" />
-                    <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
-                  </el-upload>
-                </el-form-item>
-
-                <el-form-item>
-                  <el-button type="primary" @click="saveSettings">保存设置</el-button>
-                  <el-button>重置</el-button>
-                </el-form-item>
-              </el-form>
-            </el-tab-pane>
-          </el-tabs>
-        </div>
-      </div>
-    </el-main>
-
-    <!-- 页脚 -->
-    <el-footer class="footer">
-      <div class="footer-content">
-        <div class="copyright">© 2023 博客空间 - 分享知识与见解的平台</div>
-        <div class="links">
-          <a href="#">关于我们</a> | <a href="#">联系方式</a> | <a href="#">用户协议</a> |
-          <a href="#">隐私政策</a>
-        </div>
-      </div>
-    </el-footer>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { ref } from 'vue'
-import {
-  Notebook,
-  User,
-  Location,
-  Link,
-  Calendar,
-  Star,
-  Edit,
-  View,
-  ChatDotRound,
-  Delete,
-  Document,
-  DataAnalysis,
-  Plus,
-} from '@element-plus/icons-vue'
+import { onMounted, reactive, ref } from 'vue'
+import { useRoute } from 'vue-router'
+import router from '@/router'
+import { getBlogListByUserIdServer } from '@/api/blog'
+import '@/assets/iconfont/iconfont.css'
 
-// 用户信息
-const userInfo = ref({
-  avatar: 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png',
-  name: '张明',
-  title: '前端开发工程师',
-  username: '@zhangming',
-  location: '北京市',
-  website: 'https://zhangming.dev',
-  joinDate: '2022年3月',
-  bio: '热爱前端技术，专注于Vue和React开发。喜欢分享技术文章，热衷于开源社区。希望通过博客记录和分享我的学习历程和技术见解。',
-  skills: ['Vue.js', 'React', 'TypeScript', 'Node.js', 'CSS3', 'Webpack'],
-})
+const activeName = ref('articles')
 
-// 用户统计
-const userStats = ref({
-  articles: 42,
-  followers: 1280,
-  likes: 5680,
-})
+//创建一个路由对象
+const route = useRoute()
 
-// 文章列表
-const articles = ref([
+const handleClick = (tab: any, event: any) => {
+  // console.log(tab, event)
+}
+
+//文章列表的接口
+interface blogType {
+  blog_id: number
+  title: string
+  summary: string
+  status: string
+  type: string
+  view_count: number
+  updated_at: string
+  like_count: number
+  comment_count: number
+  cover_image: string
+}
+
+const statusMap = {
+  draft: '草稿',
+  published: '已发布',
+  pending: '待审核',
+  rejected: '已拒绝',
+}
+
+//分类映射表
+const typeMap = {
+  tech: '技术',
+  design: '设计',
+  technology: '科技',
+  life: '生活',
+  programming: '编程',
+  photography: '摄影',
+  travel: '旅行',
+  other: '其他',
+}
+
+//当前用户的文章列表
+const blogList = reactive<blogType[]>([])
+const getBlogList = async () => {
+  //首先获取用户的id值
+  const user_id = Number(route.params.userId)
+  try {
+    const res = (await getBlogListByUserIdServer(user_id)).data
+    //清空之前的数据
+    blogList.splice(0, blogList.length)
+    res.data.forEach((item: blogType) => {
+      item.status = statusMap[item.status as keyof typeof statusMap]
+      item.type = typeMap[item.type as keyof typeof typeMap]
+      blogList.push(item)
+    })
+  } catch {
+    ElMessage.error('获取文章列表失败！')
+  }
+}
+
+//点击浏览详细的文本信息
+const viewDetail = (id: number) => {
+  const fullPath = router.resolve({ name: 'detailArticle', params: { id: id } }).href
+  window.open(fullPath, '_blank')
+}
+
+// 收藏数据
+const collections = ref([
   {
     id: 1,
-    title: 'Vue3 Composition API 最佳实践',
-    description:
-      '本文详细介绍了Vue3 Composition API的使用技巧和最佳实践，帮助开发者更好地组织代码。',
-    cover: 'https://via.placeholder.com/150',
-    date: '2023-05-12',
-    views: 2450,
-    comments: 32,
-    likes: 156,
-    status: 'published',
+    title: '前端开发资源精选',
+    icon: 'fas fa-code',
+    items: 24,
+    date: '2023-11-20',
   },
   {
     id: 2,
-    title: 'TypeScript 高级类型技巧',
-    description: '探索TypeScript的高级类型特性，包括条件类型、映射类型和模板字面量类型等。',
-    cover: 'https://via.placeholder.com/150',
-    date: '2023-04-28',
-    views: 1890,
-    comments: 24,
-    likes: 98,
-    status: 'published',
+    title: 'UI设计灵感库',
+    icon: 'fas fa-palette',
+    items: 18,
+    date: '2023-10-15',
   },
   {
     id: 3,
-    title: '前端性能优化完全指南',
-    description: '从加载性能到运行时性能，全面介绍前端性能优化的各种技巧和方法。',
-    cover: 'https://via.placeholder.com/150',
-    date: '2023-04-15',
-    views: 3210,
-    comments: 45,
-    likes: 210,
-    status: 'published',
+    title: 'JavaScript学习笔记',
+    icon: 'fab fa-js',
+    items: 32,
+    date: '2023-09-28',
   },
   {
     id: 4,
-    title: '深入理解CSS Grid布局',
-    description: 'CSS Grid是现代Web布局的强大工具，本文将带你深入理解其核心概念和实际应用。',
-    cover: 'https://via.placeholder.com/150',
-    date: '2023-03-30',
-    views: 1560,
-    comments: 18,
-    likes: 87,
-    status: 'published',
+    title: 'CSS动画效果合集',
+    icon: 'fas fa-film',
+    items: 16,
+    date: '2023-08-12',
+  },
+])
+
+// 动态数据
+const activities = ref([
+  {
+    id: 1,
+    title: '发布了新文章',
+    description: '《Vue 3 组件设计的最佳实践》',
+    time: '2小时前',
+    icon: 'fas fa-file-alt',
+  },
+  {
+    id: 2,
+    title: '收藏了资源',
+    description: '《前端性能优化手册》',
+    time: '昨天',
+    icon: 'fas fa-bookmark',
+  },
+  {
+    id: 3,
+    title: '评论了文章',
+    description: '《TypeScript高级技巧》写得非常好！',
+    time: '3天前',
+    icon: 'fas fa-comment',
+  },
+  {
+    id: 4,
+    title: '获得了新徽章',
+    description: '连续签到30天',
+    time: '5天前',
+    icon: 'fas fa-award',
   },
   {
     id: 5,
-    title: 'Node.js后端服务架构设计',
-    description: '如何设计高可用、可扩展的Node.js后端服务架构？本文将分享我的实践经验。',
-    cover: 'https://via.placeholder.com/150',
-    date: '2023-03-20',
-    views: 980,
-    comments: 12,
-    likes: 54,
-    status: 'draft',
+    title: '关注了用户',
+    description: '前端技术专家张明',
+    time: '1周前',
+    icon: 'fas fa-user-plus',
   },
 ])
 
-// 热门文章
-const popularArticles = ref([
-  { title: 'Vue3响应式原理深度解析', views: 5420 },
-  { title: 'JavaScript异步编程全指南', views: 4870 },
-  { title: 'CSS动画与过渡效果实战', views: 3980 },
-  { title: 'Webpack 5配置完全指南', views: 3760 },
-  { title: '前端工程化实践与思考', views: 3450 },
-])
-
-// 设置表单数据
-const settings = ref({
-  username: '@zhangming',
-  name: '张明',
-  email: 'zhangming@example.com',
-  website: 'https://zhangming.dev',
-  location: ['china', 'beijing'],
-  bio: '热爱前端技术，专注于Vue和React开发。喜欢分享技术文章，热衷于开源社区。希望通过博客记录和分享我的学习历程和技术见解。',
-  skills: ['Vue.js', 'React', 'TypeScript', 'Node.js'],
-  avatar: 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png',
+onMounted(() => {
+  getBlogList()
 })
-
-// 地区选项
-const locationOptions = [
-  {
-    value: 'china',
-    label: '中国',
-    children: [
-      { value: 'beijing', label: '北京' },
-      { value: 'shanghai', label: '上海' },
-      { value: 'guangzhou', label: '广州' },
-      { value: 'shenzhen', label: '深圳' },
-    ],
-  },
-  {
-    value: 'usa',
-    label: '美国',
-    children: [
-      { value: 'newyork', label: '纽约' },
-      { value: 'losangeles', label: '洛杉矶' },
-      { value: 'chicago', label: '芝加哥' },
-    ],
-  },
-]
-
-// 技能选项
-const skillOptions = [
-  'Vue.js',
-  'React',
-  'Angular',
-  'JavaScript',
-  'TypeScript',
-  'Node.js',
-  'CSS3',
-  'HTML5',
-  'Webpack',
-  'Vite',
-  'Docker',
-  'Git',
-]
-
-// 激活的导航
-const activeNav = ref('home')
-// 激活的标签页
-const activeTab = ref('articles')
-
-// 头像上传成功处理
-const handleAvatarSuccess = (response: any, file: File) => {
-  settings.value.avatar = URL.createObjectURL(file.raw)
-}
-
-// 保存设置
-const saveSettings = () => {
-  // 实际项目中这里会调用API保存设置
-  console.log('保存设置:', settings.value)
-  ElMessage.success('设置保存成功')
-}
 </script>
 
+<template>
+  <div class="container">
+    <div class="top"></div>
+
+    <div class="profile_container">
+      <div class="avatar_container">
+        <img
+          src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=400&q=80"
+          alt="头像"
+        />
+      </div>
+
+      <div class="mid">
+        <h1>明诺</h1>
+        <p class="join-date">
+          <i class="fas fa-calendar-alt"></i>
+          加入明诺光笺时间：2023-12-02
+        </p>
+        <p class="bio">
+          前端开发工程师 | Vue技术爱好者 | 喜欢分享技术文章和开源项目。保持学习，保持热爱。
+        </p>
+
+        <div class="badges">
+          <div class="badge"><i class="fas fa-medal"></i>金牌作者</div>
+          <div class="badge success"><i class="fas fa-star"></i>优质创作者</div>
+          <div class="badge warning"><i class="fas fa-fire"></i>活跃用户</div>
+          <div class="badge info"><i class="fas fa-code"></i>技术专家</div>
+        </div>
+      </div>
+
+      <div class="right">
+        <el-button type="primary" plain round>
+          <el-icon><i class="fas fa-edit"></i></el-icon>编辑资料
+        </el-button>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-value">63</div>
+            <div class="stat-label">获赞</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">44</div>
+            <div class="stat-label">收藏</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">28</div>
+            <div class="stat-label">关注</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">1.2k</div>
+            <div class="stat-label">浏览</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="blog_container">
+      <div class="left">
+        <h2>个人成就</h2>
+
+        <div class="achievement">
+          <i class="fas fa-thumbs-up"></i>
+          <div class="content">
+            <h3>获得63次点赞</h3>
+            <p>内容受到广泛认可</p>
+          </div>
+        </div>
+
+        <div class="achievement">
+          <i class="fas fa-comment"></i>
+          <div class="content">
+            <h3>内容获得28次评论</h3>
+            <p>积极与读者互动</p>
+          </div>
+        </div>
+
+        <div class="achievement">
+          <i class="fas fa-bookmark"></i>
+          <div class="content">
+            <h3>获得44次收藏</h3>
+            <p>高质量内容值得收藏</p>
+          </div>
+        </div>
+
+        <div class="achievement">
+          <i class="fas fa-fire"></i>
+          <div class="content">
+            <h3>连续签到120天</h3>
+            <p>坚持不懈的创作者</p>
+          </div>
+        </div>
+
+        <div class="achievement">
+          <i class="fas fa-trophy"></i>
+          <div class="content">
+            <h3>月度最佳创作者</h3>
+            <p>2024年3月获得此荣誉</p>
+          </div>
+        </div>
+
+        <div class="social-links">
+          <a href="#" class="social-link">
+            <i class="fab fa-github"></i>
+          </a>
+          <a href="#" class="social-link">
+            <i class="fab fa-twitter"></i>
+          </a>
+          <a href="#" class="social-link">
+            <i class="fab fa-linkedin-in"></i>
+          </a>
+          <a href="#" class="social-link">
+            <i class="fab fa-bilibili"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="right-content">
+        <el-tabs v-model="activeName" class="demo-tabs" @tab-click="handleClick">
+          <el-tab-pane label="文章" name="articles">
+            <div class="tab-content tab-animation">
+              <div class="post-list">
+                <div
+                  class="post-card"
+                  v-for="blog in blogList"
+                  :key="blog.blog_id"
+                  @click="viewDetail(blog.blog_id)"
+                >
+                  <div>
+                    <img :src="blog.cover_image" alt="" />
+                  </div>
+
+                  <div style="margin-left: 20px">
+                    <div class="post-header">
+                      <a class="post-title" @click.stop="viewDetail(blog.blog_id)">{{
+                        blog.title
+                      }}</a>
+                      <div class="post-date">{{ blog.updated_at }}</div>
+                    </div>
+                    <p class="post-excerpt" @click.stop="viewDetail(blog.blog_id)">
+                      {{ blog.summary }}
+                    </p>
+                    <div class="post-footer">
+                      <div class="post-stats">
+                        <div class="post-stat">
+                          <i class="iconfont icon-icon-"></i> {{ blog.view_count }}
+                        </div>
+                        <div class="post-stat">
+                          <i class="iconfont icon-dianzan"></i> {{ blog.like_count }}
+                        </div>
+                        <div class="post-stat">
+                          <i class="iconfont icon-pinglun"></i> {{ blog.comment_count }}
+                        </div>
+                      </div>
+                      <!-- <div class="post-tags">
+                        <span class="post-tag" v-for="tag in post.tags" :key="tag">{{ tag }}</span>
+                      </div> -->
+                      <div>
+                        <el-tag type="success">{{ blog.type }}</el-tag>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </el-tab-pane>
+
+          <el-tab-pane label="收藏" name="collections">
+            <div class="tab-content tab-animation">
+              <div class="collection-grid">
+                <div class="collection-card" v-for="collection in collections" :key="collection.id">
+                  <div class="collection-img">
+                    <i :class="collection.icon"></i>
+                  </div>
+                  <div class="collection-body">
+                    <div class="collection-title">{{ collection.title }}</div>
+                    <div class="collection-info">
+                      <span>{{ collection.items }} 个项目</span>
+                      <span>收藏于 {{ collection.date }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </el-tab-pane>
+
+          <el-tab-pane label="动态" name="activity">
+            <div class="tab-content tab-animation">
+              <div class="activity-list">
+                <div class="activity-item" v-for="activity in activities" :key="activity.id">
+                  <div class="activity-icon">
+                    <i :class="activity.icon"></i>
+                  </div>
+                  <div class="activity-content">
+                    <div class="activity-title">{{ activity.title }}</div>
+                    <div class="activity-desc">{{ activity.description }}</div>
+                    <div class="activity-time">{{ activity.time }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </el-tab-pane>
+        </el-tabs>
+      </div>
+    </div>
+  </div>
+</template>
+
 <style scoped>
-.blog-personal-center {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background-color: #f5f7fa;
+.container {
+  background-color: var(--bg-color);
+  min-height: calc(100vh - 60px);
+  padding-bottom: 40px;
 }
 
-.user-actions {
+.top {
+  height: 180px;
+  background: var(--card-hover-text-1);
+  position: relative;
+}
+
+.profile_container {
+  margin: 0 auto;
+  background-color: var(--card-bg);
+  width: 90%;
+  max-width: 1200px;
+  display: flex;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  position: relative;
+  z-index: 10;
+  margin-top: -40px;
+  padding: 25px;
+  transition: all 0.4s;
+  overflow: hidden;
+}
+
+.profile_container:hover {
+  box-shadow: var(--shadow-hover);
+}
+
+.avatar_container {
+  margin-left: 10px;
+  border-radius: 50%;
+  width: 100px;
+  height: 100px;
+  box-shadow: 0 0 10px 4px rgba(0, 0, 0, 0.1);
+  transform: translate(0, -20px);
+  border: 4px solid white;
+  overflow: hidden;
+  transition: all 0.4s;
+  position: relative;
+}
+
+.avatar_container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 50%, rgba(255, 255, 255, 0.3));
+  z-index: 2;
+}
+
+.avatar_container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mid {
+  width: 300px;
+  margin-top: 10px;
+  margin-left: 30px;
+  flex-grow: 1;
+}
+
+.mid h1 {
+  font-size: 1.8rem;
+  margin-bottom: 8px;
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.mid .join-date {
+  color: var(--card-text);
+  font-size: 14px;
   display: flex;
   align-items: center;
+  gap: 8px;
+  margin-bottom: 15px;
 }
 
-.user-avatar {
-  margin-left: 20px;
-  cursor: pointer;
+.mid .bio {
+  color: var(--text-secondary);
+  font-size: 15px;
+  margin-bottom: 15px;
+  line-height: 1.5;
 }
 
-.main-container {
-  max-width: 1200px;
+.mid .badges {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  background: var(--primary-light);
+  color: var(--primary);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #bfdbfe;
+}
+
+.badge i {
+  font-size: 14px;
+}
+
+.badge.success {
+  background: #ecfdf5;
+  color: var(--success);
+  border-color: #a7f3d0;
+}
+
+.badge.warning {
+  background: #fffbeb;
+  color: var(--warning);
+  border-color: #fde68a;
+}
+
+.badge.info {
+  background: #f5f3ff;
+  color: var(--info);
+  border-color: #ddd6fe;
+}
+
+.right {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-end;
+  margin-top: 10px;
+  margin-right: 10px;
+  gap: 15px;
+}
+
+.stats {
+  display: flex;
+  gap: 25px;
+  text-align: center;
+  background: var(--primary-light);
+  padding: 15px 25px;
+  border-radius: var(--border-radius);
+}
+
+.stat {
+  cursor: default;
+  min-width: 70px;
+}
+
+.stat:hover .stat-value {
+  color: var(--primary-hover);
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-main);
+  transition: all 0.4s;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: var(--card-text);
+  margin-top: 2px;
+}
+
+.blog_container {
   margin: 0 auto;
-  padding: 20px;
-  width: 100%;
-  flex: 1;
-}
-
-.profile-container {
+  width: 90%;
+  max-width: 1200px;
+  margin-top: 30px;
   display: flex;
   gap: 20px;
 }
 
-.profile-sidebar {
-  flex: 0 0 300px;
+.left {
+  background-color: var(--card-bg);
+  padding: 25px 20px;
+  width: 280px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  transition: all 0.4s;
+  height: fit-content;
 }
 
-.profile-content {
-  flex: 1;
-  min-width: 0;
+.left:hover {
+  box-shadow: var(--shadow-hover);
 }
 
-.user-card {
+.left h2 {
+  font-size: 1.3rem;
   margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--card-border);
+  color: var(--text-main);
+  font-weight: 600;
 }
 
-.user-header {
-  text-align: center;
-  padding: 20px 0;
-}
-
-.user-name {
-  font-size: 24px;
-  font-weight: bold;
-  margin: 10px 0 5px;
-}
-
-.user-title {
-  color: #909399;
-  margin-bottom: 10px;
-}
-
-.user-stats {
-  display: flex;
-  justify-content: space-around;
-  margin: 20px 0;
-  padding: 15px 0;
-  border-top: 1px solid #ebeef5;
-  border-bottom: 1px solid #ebeef5;
-}
-
-.stat-item {
-  text-align: center;
-}
-
-.stat-value {
-  font-size: 20px;
-  font-weight: bold;
-}
-
-.stat-label {
-  color: #909399;
-  font-size: 14px;
-}
-
-.user-info {
-  padding: 10px 0;
-}
-
-.info-item {
+.achievement {
   display: flex;
   align-items: center;
-  margin-bottom: 10px;
-  font-size: 14px;
-}
-
-.info-item .el-icon {
-  margin-right: 8px;
-  color: #909399;
-}
-
-.user-bio h3 {
-  margin-bottom: 10px;
-  color: #606266;
-}
-
-.user-bio p {
-  color: #606266;
-  line-height: 1.6;
-}
-
-.edit-btn {
-  width: 100%;
-  margin-top: 15px;
-}
-
-.skills-card {
-  margin-top: 20px;
-}
-
-.skills-card h3 {
-  margin-bottom: 15px;
-}
-
-.skill-tag {
-  margin-right: 8px;
-  margin-bottom: 8px;
-}
-
-.content-tabs {
-  background: #fff;
-  border-radius: 4px;
-  padding: 20px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-}
-
-.article-list {
-  margin-top: 20px;
-}
-
-.article-item {
-  display: flex;
   padding: 15px 0;
-  border-bottom: 1px solid #ebeef5;
+  border-bottom: 1px solid #f1f5f9;
+  transition: all 0.5s;
 }
 
-.article-item:last-child {
+.achievement:hover {
+  background: #f8fafc;
+  transform: translateX(5px);
+}
+
+.achievement:last-child {
   border-bottom: none;
 }
 
-.article-cover {
-  flex: 0 0 120px;
-  margin-right: 20px;
-}
-
-.cover-img {
-  width: 120px;
-  height: 80px;
-  border-radius: 4px;
-}
-
-.article-info {
-  flex: 1;
-}
-
-.article-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.article-title {
-  font-size: 18px;
-  font-weight: bold;
-  margin-right: 10px;
-  margin-bottom: 0;
-}
-
-.article-desc {
-  color: #606266;
-  margin-bottom: 10px;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.article-meta {
-  display: flex;
-  color: #909399;
-  font-size: 13px;
-}
-
-.article-meta span {
-  margin-right: 15px;
-  display: flex;
-  align-items: center;
-}
-
-.article-meta .el-icon {
-  margin-right: 5px;
-}
-
-.article-actions {
-  flex: 0 0 100px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.pagination {
-  margin-top: 30px;
-  justify-content: center;
-}
-
-.stats-container {
-  margin-top: 20px;
-}
-
-.stat-card {
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-.stat-icon {
-  display: inline-block;
-  width: 60px;
-  height: 60px;
-  line-height: 60px;
+.achievement i {
+  width: 40px;
+  height: 40px;
+  background: var(--primary-light);
   border-radius: 50%;
-  font-size: 30px;
-  margin-bottom: 15px;
-}
-
-.stat-icon .el-icon {
-  vertical-align: middle;
-}
-
-.total-articles {
-  background-color: #ecf5ff;
-  color: #409eff;
-}
-
-.total-views {
-  background-color: #fdf6ec;
-  color: #e6a23c;
-}
-
-.total-comments {
-  background-color: #f0f9eb;
-  color: #67c23a;
-}
-
-.total-likes {
-  background-color: #fef0f0;
-  color: #f56c6c;
-}
-
-.stat-content {
-  padding: 5px 0;
-}
-
-.stat-value {
-  font-size: 24px;
-  font-weight: bold;
-  margin-bottom: 5px;
-}
-
-.stat-label {
-  color: #909399;
-  font-size: 14px;
-}
-
-.chart-card {
-  margin-top: 20px;
-}
-
-.chart-placeholder {
-  height: 300px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #909399;
-  background-color: #fafafa;
-  border-radius: 4px;
-  margin-top: 15px;
-}
-
-.chart-placeholder p {
-  margin-top: 15px;
-}
-
-.popular-articles {
-  margin-top: 20px;
-}
-
-.popular-articles ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.popular-articles li {
-  display: flex;
-  align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid #ebeef5;
-}
-
-.popular-articles li:last-child {
-  border-bottom: none;
-}
-
-.popular-articles .index {
-  display: inline-block;
-  width: 24px;
-  height: 24px;
-  line-height: 24px;
-  text-align: center;
-  background-color: #f2f6fc;
-  border-radius: 4px;
+  font-size: 16px;
+  color: var(--primary);
   margin-right: 15px;
-  font-size: 14px;
-  color: #409eff;
+  flex-shrink: 0;
 }
 
-.popular-articles .title {
-  flex: 1;
+.achievement .content {
+  flex-grow: 1;
+}
+
+.achievement h3 {
   font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text-main);
 }
 
-.popular-articles .views {
-  color: #909399;
-  font-size: 14px;
+.achievement p {
+  font-size: 13px;
+  color: var(--card-text);
 }
 
-.settings-form {
+.social-links {
+  margin-top: 25px;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.social-link {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 16px;
+  transition: all 0.5s;
+}
+
+.social-link:hover {
+  background: var(--primary);
+  color: white;
+  transform: translateY(-3px);
+}
+
+.right-content {
+  flex: 1;
+  background-color: var(--card-bg);
+  padding: 25px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  transition: all 0.5s;
+}
+
+.right-content:hover {
+  box-shadow: var(--shadow-hover);
+}
+
+:deep .el-tabs__item {
+  color: var(--card-text);
+}
+
+:deep .el-tabs__item.is-active,
+.el-tabs__item:hover {
+  color: var(--el-color-primary);
+}
+
+.tab-content {
   margin-top: 20px;
-  max-width: 600px;
 }
 
-.avatar-uploader {
-  display: inline-block;
+.post-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.avatar-uploader .avatar {
-  width: 120px;
-  height: 120px;
-  display: block;
-  border-radius: 50%;
+.post-card {
+  padding: 20px;
+  border-radius: 10px;
+  display: flex;
+  background: var(--card-bg-1);
+  transition: all 0.5s;
+  border: 1 solid var(--card-hover-bg);
+  position: relative;
+  overflow: hidden;
 }
 
-.avatar-uploader-icon {
-  font-size: 28px;
-  color: #8c939d;
-  width: 120px;
-  height: 120px;
-  line-height: 120px;
-  text-align: center;
-  border: 1px dashed #d9d9d9;
-  border-radius: 50%;
+.post-card {
+  img {
+    width: 170px;
+    height: 100px;
+    object-fit: cover;
+  }
+}
+
+.post-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 4px;
+  background: var(--primary);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 0.4s ease;
+}
+
+.post-card:hover::before {
+  transform: scaleY(1);
+}
+
+.post-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--card-hover-bg);
+  border: 1 solid var(--card-hover-bg);
   cursor: pointer;
 }
 
-.footer {
-  background-color: #fff;
-  color: #909399;
-  text-align: center;
-  padding: 20px 0;
-  margin-top: 40px;
-  border-top: 1px solid #ebeef5;
+.post-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
 }
 
-.footer-content {
-  max-width: 1200px;
+.post-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--card-text);
+  text-decoration: none;
+  transition: all 0.4s;
+  transition: all 0.5s;
+}
+
+.post-title:hover {
+  color: var(--card-hover-text);
+  cursor: pointer;
+}
+
+.post-date {
+  color: var(--card-text);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.post-excerpt {
+  color: var(--card-text);
+  margin-bottom: 15px;
+  font-size: 15px;
+  line-height: 1.6;
+  transition: all 0.5s;
+  overflow: hidden; /* 隐藏溢出的内容 */
+  display: -webkit-box; /* 使用 Webkit 的 box 模型 */
+  -webkit-line-clamp: 3; /* 显示的行数 */
+  line-clamp: 3;
+  -webkit-box-orient: vertical; /* 垂直方向排列 */
+}
+
+.post-excerpt:hover {
+  color: var(--card-hover-text);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.post-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 15px;
+  font-size: 13px;
+}
+
+.post-stats {
+  display: flex;
+  gap: 20px;
+  color: var(--card-text);
+}
+
+.post-stat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.4s;
+}
+
+.post-stat:hover {
+  color: var(--primary);
+}
+
+.post-tags {
+  display: flex;
+  gap: 8px;
+}
+
+.post-tag {
+  background: var(--primary-light);
+  color: var(--primary);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.5s;
+}
+
+.post-tag:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.collection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 15px;
+}
+
+.collection-card {
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.4s;
+  border: 1px solid #f0f0f0;
+  position: relative;
+}
+
+.collection-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow);
+}
+
+.collection-img {
+  height: 160px;
+  background: linear-gradient(120deg, #e0c3fc 0%, #8ec5fc 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 3rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.collection-img::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.1), transparent);
+}
+
+.collection-body {
+  padding: 18px;
+}
+
+.collection-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: var(--text-main);
+}
+
+.collection-info {
+  font-size: 13px;
+  color: var(--card-text);
+  display: flex;
+  justify-content: space-between;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 50px 20px;
+  color: var(--card-text);
+}
+
+.empty-state i {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  color: #e4e7ed;
+}
+
+.empty-state h3 {
+  font-size: 1.3rem;
+  font-weight: 500;
+  margin-bottom: 10px;
+  color: var(--text-secondary);
+}
+
+.empty-state p {
+  max-width: 500px;
   margin: 0 auto;
 }
 
-.copyright {
-  margin-bottom: 10px;
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.links a {
-  color: #606266;
-  text-decoration: none;
-  margin: 0 8px;
+.activity-item {
+  display: flex;
+  gap: 15px;
+  padding: 15px;
+  border-radius: 10px;
+  background: #fafbfc;
+  transition: all 0.4s;
 }
 
-.links a:hover {
-  color: #409eff;
+.activity-item:hover {
+  background: #f1f5f9;
+  transform: translateX(5px);
 }
 
-/* 响应式设计 */
+.activity-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.activity-content {
+  flex: 1;
+}
+
+.activity-title {
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: var(--text-main);
+}
+
+.activity-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.activity-time {
+  font-size: 12px;
+  color: var(--card-text);
+}
+
 @media (max-width: 992px) {
-  .profile-container {
+  .profile_container {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .avatar_container {
+    margin-left: 0;
+    transform: translate(0, -60px);
+  }
+
+  .mid {
+    margin-left: 0;
+    margin-top: -30px;
+    text-align: center;
+  }
+
+  .badges {
+    justify-content: center;
+  }
+
+  .right {
+    align-items: center;
+    margin-right: 0;
+    margin-top: 20px;
+  }
+
+  .blog_container {
     flex-direction: column;
   }
 
-  .profile-sidebar {
-    flex: 0 0 auto;
+  .left {
     width: 100%;
-  }
-
-  .nav-menu {
-    margin: 0 20px;
   }
 }
 
 @media (max-width: 768px) {
-  .header {
+  .collection-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats {
+    gap: 15px;
+  }
+
+  .profile_container {
+    width: 95%;
+    padding: 20px 15px;
+  }
+}
+
+@media (max-width: 576px) {
+  .blog_container {
+    width: 95%;
+  }
+
+  .stats {
     flex-wrap: wrap;
-    height: auto;
-    padding: 10px;
+    justify-content: center;
+    gap: 15px;
+    padding: 12px;
   }
 
-  .logo {
-    margin-bottom: 10px;
+  .stat {
+    min-width: 70px;
   }
 
-  .nav-menu {
-    margin: 10px 0;
-    order: 3;
-    width: 100%;
+  .top {
+    height: 150px;
+  }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.tab-animation {
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
 
-  .article-item {
-    flex-direction: column;
-  }
-
-  .article-cover {
-    margin-right: 0;
-    margin-bottom: 15px;
-  }
-
-  .article-actions {
-    flex-direction: row;
-    justify-content: flex-end;
-    margin-top: 10px;
-  }
-
-  .el-col {
-    margin-bottom: 20px;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>

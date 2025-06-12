@@ -4,6 +4,14 @@ const adminRoutes = [
     path: '/admin',
     name: 'adminView',
     component: () => import('@/views/admin/adminLayout.vue'),
+    //admin是主路由
+    children: [
+      {
+        path: 'blog/pending',
+        name: 'blogPendingView',
+        component: () => import('@/views/admin/blogManagement/pendingView.vue'),
+      },
+    ],
   },
 ]
 

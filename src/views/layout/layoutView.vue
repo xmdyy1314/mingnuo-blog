@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useUserInfoStore } from '@/stores'
+import router from '@/router'
 
 //跳转到字文章的界面，应该单独开一页才好
 
@@ -42,10 +43,10 @@ interface Notification {
   read: boolean
 }
 
-const router = useRouter()
+const route = useRoute()
 
 // 响应式状态
-const activeIndex = ref('/')
+const activeIndex = ref('')
 const drawerVisible = ref(false)
 const searchQuery = ref('')
 const isDarkMode = ref(false)
@@ -168,6 +169,7 @@ onMounted(() => {
   if (isDarkMode.value) {
     document.documentElement.classList.add('dark-mode')
   }
+
   //通过token来判断是否已经登录。
   isLoggedIn.value = userStore.token ? true : false
 
@@ -181,6 +183,10 @@ onMounted(() => {
     ? userStore.UserInfo.nick_name
     : userStore.UserInfo.username
   user.value.email = userStore.UserInfo.email
+
+  //获取路由更新导航栏的信息
+  const res = route.path //路由的地址，来更新
+  activeIndex.value = res
 })
 </script>
 
@@ -221,7 +227,7 @@ onMounted(() => {
             <el-icon><Reading /></el-icon>
             <span>文章</span>
           </el-menu-item>
-          <el-sub-menu index="categories">
+          <!-- <el-sub-menu index="categories">
             <template #title>
               <el-icon><Folder /></el-icon>
               <span>分类</span>
@@ -242,7 +248,7 @@ onMounted(() => {
               <el-icon><Camera /></el-icon>
               <span>摄影</span>
             </el-menu-item>
-          </el-sub-menu>
+          </el-sub-menu> -->
           <el-menu-item index="/about">
             <el-icon><InfoFilled /></el-icon>
             <span>关于</span>
@@ -713,6 +719,7 @@ onMounted(() => {
 
   .search-container {
     transition: all 0.3s ease;
+    background-color: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
 
     &.active {
       .search-input {

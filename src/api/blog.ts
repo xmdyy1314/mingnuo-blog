@@ -32,3 +32,8 @@ export const getBlogByTypeServer = (page: number, type: string) => {
 export const getBlogCommentsByIdServer = (id: number) => {
   return request.get(`blogs/${id}/comments`)
 }
+
+//根据用户id获取用户的作品列表
+export const getBlogListByUserIdServer = (id: number) => {
+  return request.get(`blogs/${id}/blog-list`)
+}

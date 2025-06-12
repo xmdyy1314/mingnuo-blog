@@ -9,11 +9,7 @@ const authRoutes = [
     name: 'loginView',
     component: () => import('@/views/loginRegister/loginView.vue'),
   },
-  {
-    path: '/profile/:userId',
-    name: 'profileView',
-    component: () => import('@/views/profileView/profileView.vue'),
-  },
+
   {
     path: '/article/edit',
     name: 'editArticleView',
@@ -25,17 +21,22 @@ const authRoutes = [
     redirect: '/index',
     children: [
       {
-        path: '/index',
+        path: 'index',
         component: () => import('@/views/homeView/indexView.vue'),
         name: 'indexView',
       },
       {
-        path: '/article/detail/:id',
+        path: '/profile/:userId',
+        name: 'profileView',
+        component: () => import('@/views/profileView/profileView.vue'),
+      },
+      {
+        path: 'article/detail/:id',
         component: () => import('@/components/article/detailArticleView.vue'),
         name: 'detailArticle',
       },
       {
-        path: '/articles',
+        path: 'articles',
         component: () => import('@/views/articlesView/articlesView.vue'),
         name: 'articlesList',
       },

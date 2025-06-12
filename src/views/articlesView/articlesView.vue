@@ -56,6 +56,10 @@ const categorieList = reactive([
 //点击分类函数的时候进行的函数操作
 const handleChangeType = (index: number) => {
   //这里是类型值发送了改变
+  //如果点击的是相同的标签，就不要再更新了。
+  if (categorieList[index].value === category.value) {
+    return
+  }
   pageInfo.value.current_page = 1
   category.value = categorieList[index].value
   getArticleList()
