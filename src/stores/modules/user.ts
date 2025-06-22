@@ -13,7 +13,7 @@ export const useUserInfoStore = defineStore(
       token.value = ''
     }
     const UserInfo = ref({
-      id: '',
+      id: 0,
       username: '',
       nick_name: '',
       email: '',
@@ -22,7 +22,7 @@ export const useUserInfoStore = defineStore(
     })
 
     const setUserInfo = (
-      id: string,
+      id: number,
       username: string,
       nick_name: string,
       email: string,
@@ -38,7 +38,7 @@ export const useUserInfoStore = defineStore(
     }
     //清空个人表
     const clearUserInfo = () => {
-      UserInfo.value.id = ''
+      UserInfo.value.id = 0
       UserInfo.value.username = ''
       UserInfo.value.nick_name = ''
       UserInfo.value.email = ''

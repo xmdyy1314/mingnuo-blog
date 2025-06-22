@@ -53,6 +53,18 @@ const categorieList = reactive([
   },
 ])
 
+//分类映射表
+const typeMap = {
+  tech: '技术',
+  design: '设计',
+  technology: '科技',
+  life: '生活',
+  programming: '编程',
+  photography: '摄影',
+  travel: '旅行',
+  other: '其他',
+}
+
 //点击分类函数的时候进行的函数操作
 const handleChangeType = (index: number) => {
   //这里是类型值发送了改变
@@ -73,6 +85,7 @@ const getArticleList = async () => {
     articleList.splice(0, articleList.length)
     //然后向里面插入数据
     res.data.forEach((item: articleType) => {
+      item.type = typeMap[item.type as keyof typeof typeMap]
       articleList.push(item)
     })
     //更新页码信息

@@ -1,59 +1,151 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import '@/assets/iconfont/iconfont.css'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getBlogDetailByIdServer, getBlogCommentsByIdServer } from '@/api/blog'
+import { agreeBlogOrCommentServer } from '@/api/user'
+import { collectBlogServer } from '@/api/user'
+import router from '@/router'
+import CommentsView from './commentsView.vue'
 
-//文章的数据结构
-interface articleType {
-  id: number
-  user_id: number
-  nick_name: string
-  avatar_url: string
-  title: string
-  content: string
-  updated_at: string
+interface BlogType {
+  blog: {
+    id: number
+    title: string
+    summary: string
+    content: string
+    status: string
+    view_count: number
+    created_at: string
+    updated_at: string
+    type: string
+    collection_count: number
+    like_count: number
+    comment_count: number
+    cover_image: string
+    avatar_url: string
+  }
+  status: {
+    //点赞收藏这些
+    collect: boolean
+    like: boolean
+  }
+  author: {
+    id: number
+    nick_name: string
+    avatar_url: string
+  }
 }
 
-//评论列表
-const commentList = ref()
+// 评论列表
+const commentList = ref<any[]>([])
 
-//文章的结构
-const detailArticle = ref<articleType>()
+// 文章数据
+const detailArticle = ref<BlogType>()
 
 const route = useRoute()
-// 加载文章
 const blogId = ref<number>(0)
+
+// 加载文章
 const loadArticle = async () => {
-  //先拿到router中的数据
   blogId.value = Number(route.params.id as unknown as number)
   try {
-    const res = (await getBlogDetailByIdServer(blogId.value)).data.data
-    //将数据加载过来了。存放到存放文章的数据中去
-    detailArticle.value = {
-      id: res.blog.id,
-      user_id: res.author.id,
-      nick_name: res.author.nick_name,
-      avatar_url: res.author.avatar_url,
-      title: res.blog.title,
-      content: res.blog.content,
-      updated_at: res.blog.created_at,
-    }
+    const res = (await getBlogDetailByIdServer(blogId.value)).data
+    detailArticle.value = res.data
   } catch (error: any) {
     ElMessage.error(error.response.data.message + '，稍后再试！')
   }
 }
 
-//加载评论
+// 加载评论
 const loadComments = async () => {
   try {
     const res = (await getBlogCommentsByIdServer(blogId.value)).data
     commentList.value = res.data
-  } catch (error: any) {}
+  } catch (error: any) {
+    console.error('加载评论失败:', error)
+  }
+}
+
+// 刷新评论
+const refreshComments = async () => {
+  await loadComments()
+}
+
+// 去往个人中心界面
+const viewAuthor = (id: number) => {
+  const fullPath = router.resolve({ name: 'profileView', params: { userId: id } }).href
+  window.open(fullPath, '_blank')
+}
+
+// 评论抽屉控制
+const drawer = ref<boolean>(false)
+
+// 处理抽屉打开/关闭时的滚动
+watch(drawer, (newVal) => {
+  if (newVal) {
+    document.body.style.overflow = 'hidden'
+    document.body.style.position = 'fixed'
+    document.body.style.width = '100%'
+  } else {
+    document.body.style.overflow = ''
+    document.body.style.position = ''
+    document.body.style.width = ''
+  }
+})
+
+//收藏
+const collectBlog = async () => {
+  if (!detailArticle.value) {
+    return ElMessage.error('收藏出错！')
+  }
+  try {
+    if (detailArticle.value?.status.collect) {
+      //表示取消收藏
+      await collectBlogServer(detailArticle.value.blog.id, 'uncollect')
+      detailArticle.value.blog.collection_count--
+      detailArticle.value.status.collect = false
+    } else {
+      //表示取消收藏
+      await collectBlogServer(detailArticle.value.blog.id, 'collect')
+      detailArticle.value.blog.collection_count++
+      detailArticle.value.status.collect = true
+    }
+  } catch (error: any) {
+    ElMessage.error(error.response.data.message)
+  }
+}
+
+//点赞博客
+const agreeBlog = async () => {
+  if (!detailArticle.value) {
+    return ElMessage.error('博客点赞错误！')
+  }
+  try {
+    if (detailArticle.value?.status.like) {
+      //取消收藏
+      await agreeBlogOrCommentServer(detailArticle.value.blog.id, 'unlike', 'blog')
+      detailArticle.value.status.like = false
+      detailArticle.value.blog.like_count--
+    } else {
+      await agreeBlogOrCommentServer(detailArticle.value.blog.id, 'like', 'blog')
+      detailArticle.value.status.like = true
+      detailArticle.value.blog.like_count++
+    }
+  } catch (error: any) {
+    ElMessage.error(error.response.data.message)
+  }
+}
+
+//儿子中有评论了，调用函数进行操作使得评论数进行一个相应的更新
+const addBlogCommentCount = () => {
+  if (detailArticle.value) {
+    detailArticle.value.blog.comment_count++
+  }
 }
 
 onMounted(async () => {
   await loadArticle()
-  await loadComments()
 })
 </script>
 
@@ -61,48 +153,89 @@ onMounted(async () => {
   <div class="article-container" v-if="detailArticle">
     <!-- 文章头部 -->
     <div class="article-header">
-      <h1 class="article-title">{{ detailArticle.title }}</h1>
+      <h1 class="article-title">{{ detailArticle.blog.title }}</h1>
 
       <div class="article-meta">
-        <div class="author-info">
-          <img :src="detailArticle.avatar_url" alt="作者头像" class="author-avatar" />
+        <div class="author-info" @click="viewAuthor(detailArticle.author.id)">
+          <img :src="detailArticle.author.avatar_url" alt="作者头像" class="author-avatar" />
           <div class="author-details">
-            <span class="author-name">{{ detailArticle.nick_name }}</span>
+            <span class="author-name">{{ detailArticle.author.nick_name }}</span>
             <div class="publish-info">
-              <span>{{ detailArticle.updated_at }}</span>
-              <!-- <span> · {{ detailArticle.readTime }} 分钟阅读</span> -->
+              <span>{{ detailArticle.blog.created_at }}</span>
             </div>
           </div>
         </div>
 
         <div class="stats">
-          <!-- <div class="stat-item">
-            <i class="far fa-eye"></i>
-            <span>{{ detailArticle.views }}</span>
-          </div> -->
-          <!-- <div class="stat-item" @click="likeArticle" :class="{ liked: isLiked }">
-            <i :class="isLiked ? 'fas fa-heart' : 'far fa-heart'"></i>
-            <span>{{ article.likes }}</span>
-          </div> -->
+          <!-- 统计数据占位 -->
         </div>
       </div>
 
       <div class="tags">
-        <!-- <span v-for="tag in article.tags" :key="tag" class="tag">{{ tag }}</span> -->
+        <!-- 标签占位 -->
       </div>
     </div>
 
     <!-- 文章内容 -->
     <div class="article-content">
-      <!-- 使用v-html渲染Markdown内容 -->
-      <div v-html="detailArticle.content"></div>
+      <div v-html="detailArticle.blog.content"></div>
     </div>
-    <commentsView v-for="(item, index) in commentList" :comment="item" :key="index"></commentsView>
   </div>
 
   <div v-else class="loading-container">
     <div class="loading-spinner"></div>
     <p>正在加载文章...</p>
+  </div>
+
+  <!-- 评论抽屉 -->
+  <el-drawer v-model="drawer" title="评论" class="comments-drawer">
+    <template #header>
+      <div class="drawer-header">
+        <h3>评论 ({{ detailArticle?.blog.comment_count }})</h3>
+      </div>
+    </template>
+
+    <div class="drawer-content">
+      <div class="comments-list">
+        <commentsView
+          @addCommentNum="addBlogCommentCount"
+          :blog-id="detailArticle?.blog.id ? detailArticle?.blog.id : 0"
+        >
+        </commentsView>
+      </div>
+    </div>
+  </el-drawer>
+
+  <!-- 固定底部操作栏 -->
+  <div class="action-bar">
+    <div class="action-container">
+      <div class="action-item" @click="agreeBlog">
+        <span
+          v-if="detailArticle?.status.like"
+          class="iconfont icon-dianzan-shixin status_action status_action"
+        ></span>
+        <span v-else class="iconfont icon-dianzan"></span>
+        <span :class="{ status_action: detailArticle?.status.like }">{{
+          detailArticle?.blog.like_count
+        }}</span>
+      </div>
+      <div class="action-item" @click="collectBlog">
+        <span
+          v-if="detailArticle?.status.collect"
+          class="iconfont icon-shoucang_shixin status_action"
+        ></span>
+        <span v-else class="iconfont icon-shoucang"></span>
+        <span :class="{ status_action: detailArticle?.status.collect }">{{
+          detailArticle?.blog.collection_count
+        }}</span>
+      </div>
+      <div class="action-item comment-action" @click="drawer = !drawer">
+        <span class="iconfont icon-pinglun"></span>
+        <span>{{
+          detailArticle?.blog.comment_count ? detailArticle?.blog.comment_count : '评论'
+        }}</span>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -113,12 +246,14 @@ onMounted(async () => {
   max-width: 1000px;
   margin: 0 auto;
   padding: 3rem 4rem;
+  border-radius: 0 0 15px 15px;
+  padding-bottom: 80px; /* 为底部操作栏留出空间 */
 }
 
 /* 文章头部样式 */
 .article-header {
   margin-bottom: 2.5rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border-color);
   padding-bottom: 1.5rem;
 }
 
@@ -127,6 +262,7 @@ onMounted(async () => {
   font-weight: 700;
   line-height: 1.3;
   margin-bottom: 1.5rem;
+  color: var(--text-primary);
 }
 
 .article-meta {
@@ -139,6 +275,12 @@ onMounted(async () => {
 .author-info {
   display: flex;
   align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.author-info:hover {
+  transform: translateY(-2px);
 }
 
 .author-avatar {
@@ -147,6 +289,7 @@ onMounted(async () => {
   border-radius: 50%;
   object-fit: cover;
   margin-right: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .author-details {
@@ -158,10 +301,12 @@ onMounted(async () => {
   font-weight: 600;
   font-size: 1.1rem;
   margin-bottom: 4px;
+  color: var(--text-primary);
 }
 
 .publish-info {
   font-size: 0.9rem;
+  color: var(--text-secondary);
 }
 
 .stats {
@@ -169,159 +314,46 @@ onMounted(async () => {
   gap: 20px;
 }
 
-.stat-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  color: #666;
-  transition: color 0.2s;
+/* 文章内容样式 */
+.article-content {
+  line-height: 1.8;
+  color: var(--text-primary);
 }
 
-.stat-item i {
-  font-size: 1.2rem;
-}
-
-.stat-item:hover {
-  color: #3498db;
-}
-
-.stat-item.liked {
-  color: #e74c3c;
-}
-
-.tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 1rem;
-}
-
-.tag {
-  background-color: #f0f7ff;
-  color: #3498db;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 500;
-}
-
-/* 评论区域样式 */
-.comments-section {
-  margin-top: 3rem;
-  border-top: 1px solid #eee;
-  padding-top: 2rem;
-}
-
-.comments-title {
-  font-size: 1.5rem;
+.article-content :deep(h1) {
+  font-size: 2rem;
+  margin-top: 2.5rem;
   margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
 }
 
-.comment-form {
-  display: flex;
-  gap: 15px;
-  margin-bottom: 2rem;
+.article-content :deep(h2) {
+  font-size: 1.75rem;
+  margin-top: 2.2rem;
+  margin-bottom: 1.2rem;
 }
 
-.user-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
+.article-content :deep(h3) {
+  font-size: 1.5rem;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
 }
 
-.comment-input-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.article-content :deep(p) {
+  margin-bottom: 1.5rem;
+  font-size: 1.05rem;
 }
 
-.comment-input {
-  width: 100%;
-  min-height: 100px;
-  padding: 15px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  resize: vertical;
-  font-family: inherit;
-  font-size: 1rem;
-  transition: border-color 0.2s;
+.article-content :deep(a) {
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: all 0.2s;
 }
 
-.comment-input:focus {
-  outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
-}
-
-.submit-btn {
-  align-self: flex-end;
-  background-color: #3498db;
-  color: white;
-  border: none;
-  padding: 8px 20px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.2s;
-}
-
-.submit-btn:hover:not(:disabled) {
-  background-color: #2980b9;
-}
-
-.submit-btn:disabled {
-  background-color: #bdc3c7;
-  cursor: not-allowed;
-}
-
-/* 评论列表样式 */
-.comments-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1.8rem;
-}
-
-.comment-item {
-  display: flex;
-  gap: 15px;
-  padding: 1.2rem;
-  border-radius: 8px;
-  background-color: #f9f9f9;
-}
-
-.comment-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.comment-content {
-  flex: 1;
-}
-
-.comment-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.comment-user {
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-.comment-time {
-  color: #7f8c8d;
-  font-size: 0.9rem;
-}
-
-.comment-text {
-  line-height: 1.6;
-  color: #34495e;
+.article-content :deep(a:hover) {
+  color: var(--primary-hover);
+  text-decoration: underline;
 }
 
 /* 加载状态 */
@@ -337,8 +369,8 @@ onMounted(async () => {
 .loading-spinner {
   width: 50px;
   height: 50px;
-  border: 5px solid #f3f3f3;
-  border-top: 5px solid #3498db;
+  border: 5px solid var(--border-color);
+  border-top: 5px solid var(--primary-color);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -352,32 +384,157 @@ onMounted(async () => {
   }
 }
 
+/* 底部操作栏 */
+.action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: var(--card-bg);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+.action-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 30px;
+}
+
+.action-item {
+  display: flex;
+  align-items: center;
+  margin-left: 24px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: var(--bg-secondary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  .status_action {
+    color: var(--like-bg);
+  }
+}
+
+.action-item:hover {
+  background: var(--bg-hover);
+  transform: translateY(-3px);
+}
+
+.action-item span {
+  font-size: 16px;
+  margin-left: 6px;
+}
+
+.iconfont {
+  font-size: 20px;
+}
+
+.comment-action {
+  background: var(--primary-color);
+  color: white;
+}
+
+.comment-action:hover {
+  background: var(--like-bg);
+}
+
+/* 评论抽屉样式 */
+.comments-drawer {
+  --el-drawer-bg-color: var(--card-bg) !important;
+  --el-drawer-padding-primary: 0;
+}
+
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.drawer-header h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--card-text);
+}
+
+.drawer-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.comments-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 24px 24px;
+}
+
+.no-comments {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: var(--text-secondary);
+  padding: 40px 0;
+}
+
+.no-comments p {
+  margin-top: 16px;
+  font-size: 1.1rem;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
+  .article-container {
+    padding: 2rem;
+    padding-bottom: 70px;
+  }
+
   .article-title {
     font-size: 2rem;
   }
 
-  .article-meta {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
+  .action-container {
+    padding: 10px 20px;
   }
 
-  .article-content {
-    font-size: 1rem;
+  .action-item {
+    margin-left: 16px;
+    padding: 6px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .article-container {
+    padding: 1.5rem;
+    padding-bottom: 60px;
   }
 
-  .article-content :deep(h1) {
-    font-size: 1.7rem;
+  .article-title {
+    font-size: 1.8rem;
   }
 
-  .article-content :deep(h2) {
-    font-size: 1.5rem;
+  .author-avatar {
+    width: 40px;
+    height: 40px;
   }
 
-  .article-content :deep(h3) {
-    font-size: 1.3rem;
+  .action-item {
+    margin-left: 12px;
+    padding: 5px 10px;
+  }
+
+  .action-item span {
+    font-size: 14px;
+  }
+
+  .iconfont {
+    font-size: 18px;
   }
 }
 </style>

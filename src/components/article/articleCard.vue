@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, defineProps, onMounted, type PropType, reactive } from 'vue'
+import '@/assets/iconfont/iconfont.css'
+import { defineProps, onMounted, type PropType, reactive } from 'vue'
 import type { articleType } from '@/types/article'
 import router from '@/router/index'
 
@@ -49,15 +50,15 @@ const props = defineProps({
   },
 })
 
-onMounted(() => {
-  let i = 0
-  for (i = 0; i < categorieList.length; i++) {
-    if (categorieList[i].value === props.articleInfo.type) {
-      props.articleInfo.type = categorieList[i].label
-      return
-    }
-  }
-})
+//点击跳转到该用户的界面
+const viewAuthor = (id: number) => {
+  const fullPath = router.resolve({ name: 'profileView', params: { userId: id } }).href
+  window.open(fullPath, '_blank')
+}
+
+//分类映射表
+
+onMounted(() => {})
 </script>
 
 <template>
@@ -72,8 +73,13 @@ onMounted(() => {
         {{ articleInfo.summary }}
       </p>
       <div class="card-meta">
-        <img :src="articleInfo.author.avatar_url" alt="作者头像" class="author-avatar" />
-        <div class="author-info">
+        <img
+          :src="articleInfo.author.avatar_url"
+          alt="作者头像"
+          class="author-avatar"
+          @click="viewAuthor(articleInfo.author.id)"
+        />
+        <div @click="viewAuthor(articleInfo.author.id)" class="author-info">
           <div class="author-name">{{ articleInfo.author.nick_name }}</div>
           <div class="publish-date">{{ articleInfo.publish_time }}</div>
         </div>
@@ -81,7 +87,7 @@ onMounted(() => {
           <div class="stat">
             <el-icon><View /></el-icon> {{ articleInfo.view_count }}
           </div>
-          <div class="stat"><i class="far fa-heart"></i> 128</div>
+          <div class="stat"><i class="iconfont icon-dianzan"></i>{{ articleInfo.like_count }}</div>
         </div>
       </div>
     </div>
@@ -155,6 +161,11 @@ onMounted(() => {
   margin-bottom: 20px;
   flex-grow: 1;
   transition: all 0.8s;
+  overflow: hidden; /* 隐藏溢出的内容 */
+  display: -webkit-box; /* 使用 Webkit 的 box 模型 */
+  -webkit-line-clamp: 4; /* 显示的行数 */
+  line-clamp: 4;
+  -webkit-box-orient: vertical; /* 垂直方向排列 */
 }
 
 .card-excerpt:hover {
@@ -178,20 +189,29 @@ onMounted(() => {
   object-fit: cover;
   margin-right: 12px;
   border: 2px solid var(--light-gray);
+  cursor: pointer;
 }
 
 .author-info {
   flex-grow: 1;
+  transition: all 0.4s;
+}
+
+.author-info:hover {
+  color: var(--card-hover-text);
+  cursor: pointer;
 }
 
 .author-name {
   font-weight: 600;
   font-size: 0.95rem;
+  transition: all 0.4s;
 }
 
 .publish-date {
   color: var(--gray);
   font-size: 0.85rem;
+  transition: all 0.4s;
 }
 
 .stats {

@@ -2,17 +2,30 @@
 import { ref, computed, onMounted } from 'vue'
 import { useUserInfoStore } from '@/stores'
 import '@/assets/iconfont/iconfont.css'
-import { publishBlogServer } from '@/api/blog'
+import { publishBlogServer, getEditBlogDetailServer, editBlogServer } from '@/api/blog'
 import router from '@/router'
+import { useRoute } from 'vue-router'
+
+//获取路由信息，来判断是编辑还是发布文章
+const route = useRoute()
+
 //是否预览
 const isShow = ref<boolean>(false)
+
+//用来判断是编辑文案还是发布文章的
+const isCreateBlog = ref<boolean>(true)
+
+//当前编辑的文章编号
+const blog_id = ref<number>(0)
+
+//博客的状态
+const blog_status = ref<string>('pending')
 
 //获取富文本编辑器中的文本
 const editRef = ref<any>(null) //编辑器中暴露出来的方法
 
 //主要的文本结构  html的字符串格式
 const content = ref<string>('')
-
 // 响应式数据
 const title = ref<string>('')
 const summary = ref<string>('')
@@ -41,7 +54,7 @@ const saveBlogContent = async (status: string) => {
       router.replace({ name: 'detailArticle', params: { id: res.data.blog_id } })
       ElMessage.success('博客发布成功')
       isDisabled.value = !isDisabled.value
-    })
+    }, 1000)
   } catch (error: any) {
     ElMessage.error(error.response.data.message)
     isDisabled.value = !isDisabled.value
@@ -76,7 +89,6 @@ const handleFileChange = (file: any, fileListParam: []) => {
 }
 
 const tags = ref(['人工智能', '医疗科技', '创新'])
-const newTag = ref('')
 const coverPreview = ref('')
 const featured = ref(true)
 const commentable = ref(true)
@@ -120,11 +132,63 @@ const formattedPublishDate = computed(() => {
   })
 })
 
-const isDarkMode = ref<boolean>(false)
+//获取文章的信息(编辑文章的时候)
+const getEditBlogInfo = async () => {
+  if (isCreateBlog.value) {
+    return
+  }
+  try {
+    const res = (await getEditBlogDetailServer(blog_id.value)).data
+    title.value = res.data.title
+    summary.value = res.data.summary
+    category.value = res.data.type
+    content.value = res.data.content
+    blog_status.value = res.data.status
+  } catch {
+    ElMessage.error('获取文章信息失败！')
+  }
+}
+
+//编辑文章的请求
+const handleEditBlog = async (status: string) => {
+  //首先要进行一个校验，不能发布空的东西
+  //首先把儿子的文本获取来
+  content.value = editRef.value.handleGetContent()
+  if (!title.value || !content.value) {
+    return ElMessage.error('博客的标题或内容为空！不可编辑')
+  }
+  isDisabled.value = !isDisabled.value
+  try {
+    //这里表示博客发布成功了。要进行提示
+    //博客发布成功了 直接重定向到详情界面
+    await editBlogServer(
+      blog_id.value,
+      title.value,
+      summary.value,
+      content.value,
+      category.value,
+      status,
+    )
+    setTimeout(() => {
+      router.back()
+      ElMessage.success('博客编辑成功！')
+      isDisabled.value = !isDisabled.value
+    }, 1000)
+  } catch (error: any) {
+    ElMessage.error(error.response.data.message)
+    isDisabled.value = !isDisabled.value
+  }
+}
+
 //获取用户的信息
 const userStore = useUserInfoStore()
 onMounted(() => {
   user.value.name = userStore.UserInfo.nick_name
+  if (route.params.blog_id) {
+    isCreateBlog.value = false
+    blog_id.value = Number(route.params.blog_id)
+    getEditBlogInfo()
+  }
 })
 </script>
 
@@ -136,11 +200,40 @@ onMounted(() => {
         <h1>创作中心</h1>
       </div>
       <div class="user-actions">
-        <button class="btn btn-outline" :disabled="isDisabled" @click="saveBlogContent('草稿')">
+        <button
+          v-if="isCreateBlog"
+          class="btn btn-outline"
+          :disabled="isDisabled"
+          @click="saveBlogContent('draft')"
+        >
           <i class="iconfont icon-baocun"></i> 保存草稿
         </button>
-        <button class="btn btn-primary" :disabled="isDisabled" @click="saveBlogContent('待审核')">
-          <i class="iconfont icon-fabu"></i> 发布文章
+
+        <button
+          v-if="isCreateBlog"
+          class="btn btn-primary"
+          :disabled="isDisabled"
+          @click="saveBlogContent('pending')"
+        >
+          <i class="iconfont icon-fabu"></i> 发布
+        </button>
+
+        <button
+          v-if="!isCreateBlog && blog_status == 'draft'"
+          class="btn btn-primary"
+          :disabled="isDisabled"
+          @click="handleEditBlog('draft')"
+        >
+          <i class="iconfont icon-baocun"></i> 保存草稿
+        </button>
+
+        <button
+          v-if="!isCreateBlog"
+          class="btn btn-primary"
+          :disabled="isDisabled"
+          @click="handleEditBlog('pending')"
+        >
+          <i class="iconfont icon-fabu"></i> 发布
         </button>
       </div>
     </header>
@@ -149,10 +242,12 @@ onMounted(() => {
       <div class="editor-panel">
         <div class="form-group">
           <h2 class="panel-title"><i class="fas fa-heading"></i> 文章标题</h2>
-          <input
+          <el-input
             type="text"
             class="form-control"
             v-model="title"
+            show-word-limit
+            maxlength="30"
             placeholder="输入吸引人的标题..."
           />
         </div>
@@ -176,17 +271,20 @@ onMounted(() => {
 
         <div class="form-group">
           <h2 class="panel-title"><i class="fas fa-align-left"></i> 文章摘要</h2>
-          <textarea
-            class="form-control"
+          <el-input
+            type="textarea"
             v-model="summary"
-            rows="3"
+            maxlength="200"
+            resize="none"
+            show-word-limit
             placeholder="输入文章摘要，这将显示在文章列表和社交媒体分享中..."
-          ></textarea>
+            :autosize="{ minRows: 3, maxRows: 4 }"
+          ></el-input>
         </div>
 
         <div class="form-group">
           <h2 class="panel-title"><i class="fas fa-edit"></i> 文章内容</h2>
-          <wangEditor ref="editRef"></wangEditor>
+          <WangEditor ref="editRef" :htmlContent="content"></WangEditor>
         </div>
 
         <div class="form-group">
@@ -250,8 +348,21 @@ onMounted(() => {
             <i class="iconfont icon-yulan"></i> 预览
           </button>
           <button class="btn btn-outline"><i class="iconfont icon-daochu"></i> 导出</button>
-          <button class="btn btn-primary" :disabled="isDisabled" @click="saveBlogContent('待审核')">
+          <button
+            v-if="isCreateBlog"
+            class="btn btn-primary"
+            :disabled="isDisabled"
+            @click="saveBlogContent('pending')"
+          >
             <i class="iconfont icon-fabu"></i> 发布文章
+          </button>
+          <button
+            v-if="!isCreateBlog"
+            class="btn btn-primary"
+            :disabled="isDisabled"
+            @click="handleEditBlog('')"
+          >
+            <i class="iconfont icon-fabu"></i> 发布
           </button>
         </div>
       </div>

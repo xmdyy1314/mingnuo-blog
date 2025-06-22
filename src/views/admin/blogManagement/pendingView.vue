@@ -7,7 +7,6 @@ import {
   auditBlogByIdServer,
   getBlogAuditHistoryServer,
 } from '@/api/admin'
-import { loadFull } from 'tsparticles'
 
 //文章的列表信息展示框
 interface blogListType {

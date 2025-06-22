@@ -1,5 +1,4 @@
 import request from '@/utils/request'
-import { nl } from 'element-plus/es/locales.mjs'
 
 //获取博客的各个状态的数量
 export const getBlogStatusCountServer = () => {
@@ -31,4 +30,19 @@ export const auditBlogByIdServer = (blog_id: number, new_status: string, reason:
 //获取博客的审核列表
 export const getBlogAuditHistoryServer = (blog_id: number) => {
   return request.get(`admin/blog-audit-history?blog_id=${blog_id}`)
+}
+
+//获取权限列表信息
+export const getUsersPermissionsServer = (page: number) => {
+  return request.get(`admin/users-permissions?page=${page}`)
+}
+
+//获取用户信息系表
+export const getUserListServer = (page: number, page_size: number) => {
+  return request.get(`admin/users-list?page=${page}&page_size=${page_size}`)
+}
+
+//获取角色列表
+export const getRoleListServer = (page: number) => {
+  return request.get(`admin/users-roles?page=${page}`)
 }

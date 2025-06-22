@@ -9,10 +9,14 @@ const authRoutes = [
     name: 'loginView',
     component: () => import('@/views/loginRegister/loginView.vue'),
   },
-
   {
-    path: '/article/edit',
+    path: '/article/edit/:blog_id',
     name: 'editArticleView',
+    component: () => import('@/views/editArticle.vue/editArticle.vue'),
+  },
+  {
+    path: '/article/create',
+    name: 'createArticleView',
     component: () => import('@/views/editArticle.vue/editArticle.vue'),
   },
   {

@@ -156,8 +156,8 @@ const handleLogout = () => {
   router.push('/')
 }
 
-const handleToEdit = () => {
-  const fullPath = router.resolve({ name: 'editArticleView' }).href
+const handleToCreate = () => {
+  const fullPath = router.resolve({ name: 'createArticleView' }).href
   window.open(fullPath, '_blank')
 }
 
@@ -420,12 +420,12 @@ onMounted(() => {
                 type="primary"
                 plain
                 class="action-button"
-                @click="router.push({ name: 'profileView', params: { userId: user.id } })"
+                @click="router.replace({ name: 'profileView', params: { userId: user.id } })"
               >
                 <el-icon><User /></el-icon>
                 <span>个人中心</span>
               </el-button>
-              <el-button type="success" plain class="action-button" @click="handleToEdit">
+              <el-button type="success" plain class="action-button" @click="handleToCreate">
                 <el-icon><EditPen /></el-icon>
                 <span>写文章</span>
               </el-button>
@@ -444,7 +444,7 @@ onMounted(() => {
         <el-popover
           placement="bottom-end"
           :width="70"
-          trigger="click"
+          trigger="hover"
           popper-class="user-popover"
           class="noLogin"
           v-else
@@ -561,16 +561,40 @@ onMounted(() => {
       </div>
     </el-drawer> -->
   </div>
-
   <div class="theme_mode">
     <router-view></router-view>
   </div>
+  <!-- <div class="footer">
+    <div class="container">
+      <p>© 2025 明诺光笺 - 保留所有权利</p>
+      <a href="https://beian.miit.gov.cn">鄂ICP备2024072886号-2</a>
+    </div>
+  </div> -->
 </template>
 
 <style scoped lang="scss">
+.footer {
+  background-color: var(--card-bg);
+  color: var(--card-text-1);
+  height: 100px;
+  padding: 20px 0 10px 0;
+  a {
+    color: var(--card-text-1);
+  }
+
+  p {
+    margin-bottom: 5px;
+  }
+
+  .container {
+    text-align: center;
+  }
+}
+
 .theme_mode {
   background-color: var(--bg-color);
   color: var(--text-color);
+  padding-bottom: 40px;
 }
 
 // 定义变量

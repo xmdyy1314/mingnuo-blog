@@ -8,7 +8,7 @@
       </div>
       <el-menu
         router
-        default-active="dashboard"
+        :default-active="activeIndex"
         class="admin-menu"
         :collapse="isCollapse"
         background-color="#2c3e50"
@@ -26,7 +26,7 @@
             <span>博客管理</span>
           </template>
           <el-menu-item index="/admin/blog/list">所有文章</el-menu-item>
-          <el-menu-item index="/admin/blog/pending">待审核({{ pendingCount }})</el-menu-item>
+          <el-menu-item index="/admin/blog/pending">待审核</el-menu-item>
           <el-menu-item index="/admin/blog/drafts">草稿箱</el-menu-item>
         </el-sub-menu>
 
@@ -68,11 +68,11 @@
         <div class="header-right">
           <el-dropdown>
             <div class="user-info">
-              <el-badge :value="notifications" class="notification-badge">
+              <!-- <el-badge :value="notifications" class="notification-badge">
                 <el-icon><Bell /></el-icon>
-              </el-badge>
-              <el-avatar :size="35" src="/user-avatar.jpg" class="user-avatar" />
-              <span class="user-name">管理员</span>
+              </el-badge> -->
+              <el-avatar :size="35" :src="userStore.UserInfo.avatar_url" class="user-avatar" />
+              <span class="user-name">{{ userStore.UserInfo.nick_name }}</span>
             </div>
             <template #dropdown>
               <el-dropdown-menu>
@@ -93,9 +93,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { HomeFilled, Edit, User, Setting, Fold, Expand, Bell } from '@element-plus/icons-vue'
+import { useUserInfoStore } from '@/stores'
+
+const userStore = useUserInfoStore()
 
 // 是否折叠侧边栏
 const isCollapse = ref(false)
@@ -107,19 +109,9 @@ const toggleCollapse = () => {
 
 // 当前路由名称
 const route = useRoute()
-const currentRoute = computed(() => {
-  const routeMap = {
-    '/admin/dashboard': '控制台',
-    '/admin/blog/list': '文章列表',
-    '/admin/blog/pending': '博客审核',
-    '/admin/blog/drafts': '草稿箱',
-    '/admin/users/list': '用户列表',
-    '/admin/users/roles': '角色管理',
-    '/admin/users/permissions': '权限设置',
-    '/admin/settings': '系统设置',
-  }
-  return routeMap[route.path] || ''
-})
+
+//当前高亮导航的值
+const activeIndex = ref<string>('')
 
 // 待审核文章数量
 const pendingCount = ref(5)
@@ -131,6 +123,10 @@ const notifications = ref(3)
 const logout = () => {
   console.log('退出登录')
 }
+
+onMounted(() => {
+  activeIndex.value = route.path
+})
 </script>
 
 <style scoped lang="scss">
@@ -191,6 +187,7 @@ const logout = () => {
   background-color: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
   overflow: hidden;
+  justify-content: space-between;
 }
 
 .header-left {
@@ -228,11 +225,12 @@ const logout = () => {
   }
 
   .user-avatar {
-    margin-right: 10px;
+    margin-right: 5px;
   }
 
   .user-name {
-    margin-left: 10px;
+    margin-left: 5px;
+    margin-right: 40px;
   }
 }
 

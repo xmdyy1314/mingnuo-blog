@@ -31,9 +31,7 @@ const valueHtml = ref('')
 
 // 模拟 ajax 异步获取内容
 onMounted(() => {
-  setTimeout(() => {
-    valueHtml.value = ''
-  }, 1500)
+  valueHtml.value = props.htmlContent
 })
 
 const toolbarConfig = {}
@@ -55,7 +53,20 @@ const handleGetContent = () => {
   return valueHtml.value
 }
 
-//暴露方法给父亲用
+//接受父亲传递过来的值
+const props = defineProps({
+  htmlContent: {
+    default: '',
+  },
+})
+
+watch(
+  () => props.htmlContent,
+  () => {
+    valueHtml.value = props.htmlContent
+  },
+)
+
 defineExpose({
   handleGetContent,
 })

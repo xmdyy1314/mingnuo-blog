@@ -1,9 +1,18 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import router from '@/router'
 import { getBlogListByUserIdServer } from '@/api/blog'
+import { getUserBaseInfoServer, getCollectionsByUserIdServer } from '@/api/user'
+import { formatNum } from '@/utils/publicfn'
+import { useUserInfoStore } from '@/stores'
 import '@/assets/iconfont/iconfont.css'
+
+//需要用到当前登陆用户的信息
+const userStore = useUserInfoStore()
+
+//记录一个状态值，当前的查看的用户是否为登录用户
+const isCurrentUser = ref<boolean>(false)
 
 const activeName = ref('articles')
 
@@ -11,7 +20,11 @@ const activeName = ref('articles')
 const route = useRoute()
 
 const handleClick = (tab: any, event: any) => {
-  // console.log(tab, event)
+  if (tab.props.name === 'collections') {
+    getCollectList()
+  } else {
+    getBlogList()
+  }
 }
 
 //文章列表的接口
@@ -26,6 +39,15 @@ interface blogType {
   like_count: number
   comment_count: number
   cover_image: string
+}
+
+//定义收藏的接口
+interface collectType {
+  id: number
+  title: string
+  cover_image: string
+  nick_name: string
+  created_at: string
 }
 
 const statusMap = {
@@ -47,13 +69,20 @@ const typeMap = {
   other: '其他',
 }
 
+//分页操作
+const page_info = ref({
+  page: 1,
+  total_page: 1,
+  total: 12,
+  size: 12,
+})
+
 //当前用户的文章列表
 const blogList = reactive<blogType[]>([])
 const getBlogList = async () => {
   //首先获取用户的id值
-  const user_id = Number(route.params.userId)
   try {
-    const res = (await getBlogListByUserIdServer(user_id)).data
+    const res = (await getBlogListByUserIdServer(userInfo.value.user_id)).data
     //清空之前的数据
     blogList.splice(0, blogList.length)
     res.data.forEach((item: blogType) => {
@@ -66,84 +95,72 @@ const getBlogList = async () => {
   }
 }
 
+//用户的收藏列表
+const collectList = reactive<collectType[]>([])
+const getCollectList = async () => {
+  try {
+    const res = (await getCollectionsByUserIdServer(userInfo.value.user_id, page_info.value.page))
+      .data
+    //先把之前已经有的数据都清空
+    collectList.splice(0, collectList.length)
+    Object.assign(collectList, res.data)
+    page_info.value.total_page = res.page_info.totalPages
+    page_info.value.total = res.page_info.limit * page_info.value.total_page
+    page_info.value.size = res.page_info.limit
+  } catch (error: any) {
+    ElMessage.error(error.response.data.message)
+  }
+}
+
 //点击浏览详细的文本信息
 const viewDetail = (id: number) => {
   const fullPath = router.resolve({ name: 'detailArticle', params: { id: id } }).href
   window.open(fullPath, '_blank')
 }
 
-// 收藏数据
-const collections = ref([
-  {
-    id: 1,
-    title: '前端开发资源精选',
-    icon: 'fas fa-code',
-    items: 24,
-    date: '2023-11-20',
-  },
-  {
-    id: 2,
-    title: 'UI设计灵感库',
-    icon: 'fas fa-palette',
-    items: 18,
-    date: '2023-10-15',
-  },
-  {
-    id: 3,
-    title: 'JavaScript学习笔记',
-    icon: 'fab fa-js',
-    items: 32,
-    date: '2023-09-28',
-  },
-  {
-    id: 4,
-    title: 'CSS动画效果合集',
-    icon: 'fas fa-film',
-    items: 16,
-    date: '2023-08-12',
-  },
-])
+//用户的信息
+const userInfo = ref({
+  user_id: 0,
+  author: '',
+  created_at: '',
+  avatar_url: '',
+  signature: '',
+})
 
-// 动态数据
-const activities = ref([
-  {
-    id: 1,
-    title: '发布了新文章',
-    description: '《Vue 3 组件设计的最佳实践》',
-    time: '2小时前',
-    icon: 'fas fa-file-alt',
-  },
-  {
-    id: 2,
-    title: '收藏了资源',
-    description: '《前端性能优化手册》',
-    time: '昨天',
-    icon: 'fas fa-bookmark',
-  },
-  {
-    id: 3,
-    title: '评论了文章',
-    description: '《TypeScript高级技巧》写得非常好！',
-    time: '3天前',
-    icon: 'fas fa-comment',
-  },
-  {
-    id: 4,
-    title: '获得了新徽章',
-    description: '连续签到30天',
-    time: '5天前',
-    icon: 'fas fa-award',
-  },
-  {
-    id: 5,
-    title: '关注了用户',
-    description: '前端技术专家张明',
-    time: '1周前',
-    icon: 'fas fa-user-plus',
-  },
-])
+//当前用户的获赞数以及收藏数以及被浏览数
+const total_num = ref({
+  view_count: '',
+  like_count: '',
+  collect_count: '',
+})
+
+//获取所查看用户的信息
+const getUserBaseInfo = async () => {
+  userInfo.value.user_id = Number(route.params.userId)
+  try {
+    const res = (await getUserBaseInfoServer(userInfo.value.user_id)).data
+    userInfo.value = res.data.user_info
+    total_num.value.view_count = formatNum(Number(res.data.total_count.view_count))
+    total_num.value.like_count = formatNum(Number(res.data.total_count.like_count))
+    total_num.value.collect_count = formatNum(Number(res.data.total_count.collect_count))
+    if (userStore.UserInfo.id === userInfo.value.user_id) {
+      isCurrentUser.value = true
+    }
+  } catch {
+    return ElMessage.error('获取用户信息失败！')
+  }
+}
+
+//编辑信息
+const editId = ref<number>(0)
+
+//点击编辑按钮的时候，跳转到编辑界面
+const handleToEditBlog = (blog_id: number) => {
+  router.push({ name: 'editArticleView', params: { blog_id } })
+}
 
 onMounted(() => {
+  getUserBaseInfo()
   getBlogList()
 })
 </script>
@@ -154,50 +171,47 @@ onMounted(() => {
 
     <div class="profile_container">
       <div class="avatar_container">
-        <img
-          src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=400&q=80"
-          alt="头像"
-        />
+        <img :src="userInfo.avatar_url" alt="头像" />
       </div>
 
       <div class="mid">
-        <h1>明诺</h1>
+        <h1>{{ userInfo.author }}</h1>
         <p class="join-date">
           <i class="fas fa-calendar-alt"></i>
-          加入明诺光笺时间：2023-12-02
+          加入明诺光笺时间：{{ userInfo.created_at }}
         </p>
         <p class="bio">
-          前端开发工程师 | Vue技术爱好者 | 喜欢分享技术文章和开源项目。保持学习，保持热爱。
+          {{ userInfo.signature }}
         </p>
 
-        <div class="badges">
+        <!-- <div class="badges">
           <div class="badge"><i class="fas fa-medal"></i>金牌作者</div>
           <div class="badge success"><i class="fas fa-star"></i>优质创作者</div>
           <div class="badge warning"><i class="fas fa-fire"></i>活跃用户</div>
           <div class="badge info"><i class="fas fa-code"></i>技术专家</div>
-        </div>
+        </div> -->
       </div>
 
       <div class="right">
-        <el-button type="primary" plain round>
-          <el-icon><i class="fas fa-edit"></i></el-icon>编辑资料
+        <el-button type="primary" plain round v-if="isCurrentUser">
+          <el-icon><Edit /></el-icon>编辑资料
         </el-button>
 
         <div class="stats">
           <div class="stat">
-            <div class="stat-value">63</div>
+            <div class="stat-value">{{ total_num.like_count }}</div>
             <div class="stat-label">获赞</div>
           </div>
           <div class="stat">
-            <div class="stat-value">44</div>
+            <div class="stat-value">{{ total_num.collect_count }}</div>
             <div class="stat-label">收藏</div>
           </div>
-          <div class="stat">
+          <!-- <div class="stat">
             <div class="stat-value">28</div>
             <div class="stat-label">关注</div>
-          </div>
+          </div> -->
           <div class="stat">
-            <div class="stat-value">1.2k</div>
+            <div class="stat-value">{{ total_num.view_count }}</div>
             <div class="stat-label">浏览</div>
           </div>
         </div>
@@ -274,6 +288,8 @@ onMounted(() => {
                   v-for="blog in blogList"
                   :key="blog.blog_id"
                   @click="viewDetail(blog.blog_id)"
+                  @mouseenter="editId = blog.blog_id"
+                  @mouseleave="editId = 0"
                 >
                   <div>
                     <img :src="blog.cover_image" alt="" />
@@ -284,7 +300,9 @@ onMounted(() => {
                       <a class="post-title" @click.stop="viewDetail(blog.blog_id)">{{
                         blog.title
                       }}</a>
-                      <div class="post-date">{{ blog.updated_at }}</div>
+                      <div class="post-date">
+                        {{ blog.updated_at }} <span v-show="isCurrentUser">{{ blog.status }}</span>
+                      </div>
                     </div>
                     <p class="post-excerpt" @click.stop="viewDetail(blog.blog_id)">
                       {{ blog.summary }}
@@ -305,6 +323,12 @@ onMounted(() => {
                         <span class="post-tag" v-for="tag in post.tags" :key="tag">{{ tag }}</span>
                       </div> -->
                       <div>
+                        <span
+                          style="margin-right: 10px"
+                          v-show="editId === blog.blog_id && isCurrentUser"
+                          @click.stop="handleToEditBlog(blog.blog_id)"
+                          >编辑</span
+                        >
                         <el-tag type="success">{{ blog.type }}</el-tag>
                       </div>
                     </div>
@@ -317,15 +341,20 @@ onMounted(() => {
           <el-tab-pane label="收藏" name="collections">
             <div class="tab-content tab-animation">
               <div class="collection-grid">
-                <div class="collection-card" v-for="collection in collections" :key="collection.id">
+                <div
+                  class="collection-card"
+                  v-for="collection in collectList"
+                  :key="collection.id"
+                  @click="viewDetail(collection.id)"
+                >
                   <div class="collection-img">
-                    <i :class="collection.icon"></i>
+                    <img :src="collection.cover_image" alt="" />
                   </div>
                   <div class="collection-body">
                     <div class="collection-title">{{ collection.title }}</div>
                     <div class="collection-info">
-                      <span>{{ collection.items }} 个项目</span>
-                      <span>收藏于 {{ collection.date }}</span>
+                      <span>{{ collection.nick_name }} </span>
+                      <span>收藏于 {{ collection.created_at }}</span>
                     </div>
                   </div>
                 </div>
@@ -333,7 +362,7 @@ onMounted(() => {
             </div>
           </el-tab-pane>
 
-          <el-tab-pane label="动态" name="activity">
+          <!-- <el-tab-pane label="动态" name="activity">
             <div class="tab-content tab-animation">
               <div class="activity-list">
                 <div class="activity-item" v-for="activity in activities" :key="activity.id">
@@ -348,7 +377,7 @@ onMounted(() => {
                 </div>
               </div>
             </div>
-          </el-tab-pane>
+          </el-tab-pane> -->
         </el-tabs>
       </div>
     </div>
@@ -736,6 +765,10 @@ onMounted(() => {
   color: var(--card-text);
   font-size: 13px;
   white-space: nowrap;
+
+  span {
+    margin-left: 10px;
+  }
 }
 
 .post-excerpt {
@@ -805,24 +838,25 @@ onMounted(() => {
 
 .collection-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 20px;
   margin-top: 15px;
 }
 
 .collection-card {
-  background: white;
+  background: var(--card-bg-1);
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
   transition: all 0.4s;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--card-border-1);
   position: relative;
 }
 
 .collection-card:hover {
   transform: translateY(-5px);
   box-shadow: var(--shadow);
+  cursor: pointer;
 }
 
 .collection-img {
@@ -835,6 +869,12 @@ onMounted(() => {
   font-size: 3rem;
   position: relative;
   overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 }
 
 .collection-img::after {
@@ -856,6 +896,10 @@ onMounted(() => {
   font-weight: 600;
   margin-bottom: 10px;
   color: var(--text-main);
+}
+
+.collection-title:hover {
+  color: var(--card-hover-text-1);
 }
 
 .collection-info {

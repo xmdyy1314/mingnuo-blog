@@ -18,6 +18,23 @@ export const getBlogDetailByIdServer = (id: number) => {
   return request.get(`blogs/detail/${id}`)
 }
 
+//获取待编辑博客的相信信息
+export const getEditBlogDetailServer = (id: number) => {
+  return request.get(`blogs/edit-detail/${id}`)
+}
+
+//编辑博客信息内容
+export const editBlogServer = (
+  blogId: number,
+  title: string,
+  summary: string,
+  content: string,
+  type: string,
+  status: string,
+) => {
+  return request.post('blogs/edit-blog', { blogId, title, summary, content, type, status })
+}
+
 //根据页码与类型获取文章
 export const getBlogByTypeServer = (page: number, type: string) => {
   return request.get('blogs/by-type', {
